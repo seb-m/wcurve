@@ -27,13 +27,13 @@ classif = [
 
 setup(
     name='wcurve',
-    version='0.0.1',
+    version='0.0.2',
     description='wcurve implements basic arithmetic operations on elliptic curves in short Weiertsrass form.',
     author='Sebastien Martini',
     author_email='seb@dbzteam.org',
     license='MIT License',
     classifiers=classif,
     url='http://github.com/seb-m/wcurve',
-    download_url='http://github.com/seb-m/wcurve/tarball/0.0.1',
+    download_url='http://github.com/seb-m/wcurve/tarball/0.0.2',
     py_modules=['wcurve'],
     )
