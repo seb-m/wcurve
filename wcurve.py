@@ -467,11 +467,14 @@ class JacobianPoint:
 
     def verified_scalar_multiplication(self, scalar):
         """
-        This scalar multiplication checks the correctness of the final result.
+        This scalar multiplication checks the correctness of the final result
+        but in a way where a non-exploitable wrong result is returned if an
+        error is introduced in any part of the computation.
 
-        Implementation following the Algorithm 8 presented at section 4 of
+        This implementation follows the Algorithm 8 presented at section 4 of
         "Sign Change Fault Attacks On Elliptic Curve Cryptosystems" by Blomer,
-        Otto and Seifert.
+        Otto and Seifert. It also uses 'infective computations' as suggested
+        by the modified algorithm at the end of section 4.1.
 
         See function secp256r1_curve_with_correctness_check() for more details
         and an example. Also read the docstring of scalar_multiplication() it
@@ -487,20 +490,34 @@ class JacobianPoint:
         if not scalar:
             return copy.copy(self.curve.point_at_infinity)
 
+        # Base point on 'small curve'
         small_base_point = self.curve.small_curve.base_point
+
         c = self.fparithmetic.crt([(self.x, small_base_point.x),
                                    (self.y, small_base_point.y),
                                    (self.z, small_base_point.z)],
                                   (self.curve.p, self.curve.small_curve.p))
-        ppt = JacobianPoint(c[0], c[1], c[2], self.curve.big_curve)
 
-        q = ppt._scalar_multiplication(scalar, _bit_length(scalar))
-        r = scalar * small_base_point
+        # Base point on 'big curve'
+        big_base_point = JacobianPoint(c[0], c[1], c[2], self.curve.big_curve)
 
-        qt = JacobianPoint(q.x, q.y, q.z, self.curve.small_curve)
-        if r != qt:
-            raise ValueError("Verification failed.")
-        return JacobianPoint(q.x, q.y, q.z, self.curve)
+        # q = scalar * big_base_point
+        q = big_base_point._scalar_multiplication(scalar, _bit_length(scalar))
+
+        smalln = self.curve.small_curve.n
+        invk = self.fparithmetic._modular_exponentiation(scalar, smalln - 2,
+                                                         _bit_length(smalln-2),
+                                                         smalln)
+        # r = 1/k * small_q - small_base_point
+        small_q = JacobianPoint(q.x, q.y, q.z, self.curve.small_curve)
+        r = small_q._scalar_multiplication(invk, _bit_length(invk))
+        r = r - small_base_point
+        r._squeeze()
+        # Expected to have c=1
+        c = r.x * r.y
+        # Return c * this_q (with this_q is q on the current curve)
+        this_q = JacobianPoint(q.x, q.y, q.z, self.curve)
+        return this_q._scalar_multiplication(c, _bit_length(c))
 
     def __mul__(self, scalar):
         """
