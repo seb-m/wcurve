@@ -384,7 +384,7 @@ class JacobianPoint:
 
     def __add__(self, point):
         """
-        Adds two differents points.
+        Adds two points.
 
         Very inefficient algorithm when used for double scalar multiplication,
         the only upside in this case is that it is formed of regular operations.
@@ -397,13 +397,16 @@ class JacobianPoint:
         if not isinstance(point, JacobianPoint):
             raise TypeError("Invalid type %s, expected type %s." % \
                                 (type(point), JacobianPoint))
-        if self == point:
-            raise ValueError("Cannot add two equals points.")
 
         if self.is_at_infinity():
             return copy.copy(point)
         elif point.is_at_infinity():
             return copy.copy(self)
+
+        if self == point:
+            # The formulaes forbid adding together two identical points, but we
+            # can double one of them.
+            return 2 * self
 
         # The two points must share the same z coordinates, it should be
         # more efficient to call _multiple() than to_affine() which would
@@ -441,7 +444,7 @@ class JacobianPoint:
         There is nothing that prevent the use of first twos Coron's
         countermeasures priorly to the call of this method.
 
-        Restrictions: 0 * point and scalar * infinity are not permitted.
+        Restrictions: scalar * infinity is not permitted.
         """
         _check_integer_type(scalar)
         if not self.is_valid():
@@ -456,6 +459,15 @@ class JacobianPoint:
         if not scalar:
             # This recopy is likely superfluous.
             return copy.copy(self.curve.point_at_infinity)
+
+        # When a large scalar is compared to 0, long_compare() is called and
+        # this branch is taken:
+        # if (Py_SIZE(a) != Py_SIZE(b)) {
+        #    sign = Py_SIZE(a) - Py_SIZE(b);
+        # }
+        # When scalar is negated it is recopied and its size value is negated.
+        if scalar < 0:
+            return (-scalar) * (-self)
 
         # Fixme: I would prefer not having to call _bit_length() at all, but it
         # would require to use a right-to-left exponentiation algorithm which in
@@ -489,6 +501,10 @@ class JacobianPoint:
         # See comment in scalar_multiplication().
         if not scalar:
             return copy.copy(self.curve.point_at_infinity)
+
+        # See comment in scalar_multiplication().
+        if scalar < 0:
+            return (-scalar) * (-self)
 
         # Base point on 'small curve'
         small_base_point = self.curve.small_curve.base_point

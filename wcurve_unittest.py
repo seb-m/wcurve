@@ -22,22 +22,25 @@ class TestWCurveArithmetic(unittest.TestCase):
         self.assertFalse(self.curve.base_point == self.curve.point_at_infinity)
         self.assertTrue(self.curve.base_point != self.curve.point_at_infinity)
 
-    def testNegate(self):
+    def testSub(self):
         r = self.curve.base_point - self.curve.base_point
         self.assertEqual(r, self.curve.point_at_infinity)
-        def f():
-            return self.curve.point_at_infinity - self.curve.point_at_infinity
-        self.assertRaises(ValueError, f)
+        r = self.curve.point_at_infinity - self.curve.point_at_infinity
+        self.assertEqual(r, self.curve.point_at_infinity)
         r = self.curve.base_point - self.curve.point_at_infinity
         self.assertEqual(r, self.curve.base_point)
+        r = self.curve.point_at_infinity - self.curve.base_point
+        self.assertEqual(r, -self.curve.base_point)
 
     def testAdd(self):
         r = self.curve.base_point + self.curve.point_at_infinity
         self.assertEqual(r, self.curve.base_point)
         r = self.curve.base_point + (2 * self.curve.base_point)
         self.assertEqual(r, (3 * self.curve.base_point))
-        r = self.curve.point_at_infinity - self.curve.base_point
-        self.assertEqual(r, -self.curve.base_point)
+        r = self.curve.base_point + self.curve.base_point
+        self.assertEqual(r, 2 * self.curve.base_point)
+        r = self.curve.point_at_infinity + self.curve.point_at_infinity
+        self.assertEqual(r, self.curve.point_at_infinity)
 
     def testMul(self):
         r = self.curve.n * self.curve.base_point
@@ -57,6 +60,9 @@ class TestWCurveArithmetic(unittest.TestCase):
         self.assertRaises(ValueError, lambda: 2 * b)
         r = 0 * self.curve.base_point
         self.assertEqual(r, self.curve.point_at_infinity)
+        r1 = -42 * self.curve.base_point
+        r2 = ((-42) % self.curve.n) * self.curve.base_point
+        self.assertEqual(r1, r2)
 
     def testMulRef(self):
         # (x, y) = s * base_point obtained with openssl
