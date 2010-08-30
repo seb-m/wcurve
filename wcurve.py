@@ -39,7 +39,7 @@ import copy
 import random
 
 __author__ = "seb@dbzteam.org (Sebastien Martini)"
-__version__ = "0.0.2"
+__version__ = "0.0.3"
 
 # Functions, classes, methods prefixed with '_' are privates and are not
 # intended to be called directly.
