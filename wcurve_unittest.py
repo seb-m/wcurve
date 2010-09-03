@@ -12,7 +12,7 @@ class TestWCurveArithmetic(unittest.TestCase):
     def setUp(self):
         self.curve = wcurve.secp256r1_curve()
 
-    def testEqPoint(self):
+    def testEq(self):
         self.assertEqual(self.curve.base_point, self.curve.base_point)
         self.assertEqual(self.curve.point_at_infinity, self.curve.point_at_infinity)
         self.assertEqual(self.curve.point_at_infinity, -self.curve.point_at_infinity)
@@ -72,6 +72,13 @@ class TestWCurveArithmetic(unittest.TestCase):
         ref = wcurve.JacobianPoint(x, y, 1, self.curve)
         r = s * self.curve.base_point
         self.assertEqual(r, ref)
+
+    def testCompression(self):
+        bit_y = self.curve.base_point.compression_bit_y()
+        p = wcurve.JacobianPoint.uncompress(self.curve.base_point.x, bit_y, self.curve)
+        self.assertEqual(p, self.curve.base_point)
+        p = wcurve.JacobianPoint.uncompress(self.curve.base_point.x, 1 - bit_y, self.curve)
+        self.assertEqual(p, -self.curve.base_point)
 
 class TestVerifiedScalarMul(unittest.TestCase):
     def setUp(self):

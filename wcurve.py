@@ -38,7 +38,8 @@ License: MIT
 import copy
 import random
 
-__author__ = "seb@dbzteam.org (Sebastien Martini)"
+__author__ = "Sebastien Martini (seb@dbzteam.org)"
+
 __version__ = "0.0.3"
 
 # Functions, classes, methods prefixed with '_' are privates and are not
@@ -327,6 +328,35 @@ class JacobianPoint:
         assert not self.is_at_infinity()
         self._squeeze()
         return self.x, self.y
+
+    def compression_bit_y(self):
+        """
+        Return the compression bit odd(y) associated to the y coordinate.
+        Does not work with point at infinity.
+        """
+        assert not self.is_at_infinity()
+        self._squeeze()
+        return self.y & 1
+
+    @staticmethod
+    def uncompress(x, bit_y, curve):
+        """
+        Uncompress and return the point represented by x and bit_y. See method
+        compression_bit_y().
+        """
+        assert bit_y in (0, 1)
+        assert curve.p % 4 == 3  # Required by the square root formulae.
+        # y**2 = x**3 + ax + b
+        t = x ** 3 % curve.p
+        y2 = (t + curve.a * x + curve.b)  % curve.p
+        # y = +/- y2 ** ((p + 1) / 4)
+        e = (curve.p + 1) // 4
+        y = _FpArithmetic(curve.p).modular_exponentiation(y2, e, _bit_length(e))
+        if (y & 1) != bit_y:
+            assert y != 0
+            y = -y % curve.p
+        assert (y & 1) == bit_y
+        return JacobianPoint(x, y, 1, curve)
 
     def is_at_infinity(self):
         """
