@@ -236,7 +236,7 @@ class _CoZArithmetic:
     def scalar_multiplication(self, k, k_num_bits, p):
         """
         Montgomery ladder. Compute k * p.
-        This algorithm does not work with k=0.
+        This algorithm does not work for k=0.
         """
         r0 = p
         r1, r0 = self.dblu(r0)
@@ -296,9 +296,12 @@ class JacobianPoint:
         self.y = self.y * t1 % self.curve.p
         self.z = self.z * lmbda % self.curve.p
 
-    def _squeeze(self):
+    def squeeze(self):
         """
-        'Squeeze' current coordinates in-place.
+        'Squeeze' current coordinates in-place: if the point at infinity it is
+        set to (1 : 1 : 0) otherwise it will be represented by (x : y : 1).
+        Before modifying the representation this method checks that the point is
+        a point on the curve.
         """
         # The point must be a valid point on curve. Otherwise it would
         # modify this point to a non-equivalent representation.
@@ -323,19 +326,19 @@ class JacobianPoint:
     def to_affine(self):
         """
         Convert this point to its affine representation (x/z**2, y/z**3).
-        Does not work with point at infinity.
+        Does not work for point at infinity.
         """
         assert not self.is_at_infinity()
-        self._squeeze()
+        self.squeeze()
         return self.x, self.y
 
     def compression_bit_y(self):
         """
         Return the compression bit odd(y) associated to the y coordinate.
-        Does not work with point at infinity.
+        Does not work for point at infinity.
         """
         assert not self.is_at_infinity()
-        self._squeeze()
+        self.squeeze()
         return self.y & 1
 
     @staticmethod
@@ -456,7 +459,7 @@ class JacobianPoint:
         Do not call this method directly unless you know what you're doing.
         Instead use __mul__ and __rmul__ methods.
         """
-        self._squeeze()
+        self.squeeze()
         return self.cozarithmetic.scalar_multiplication(scalar,
                                                         scalar_num_bits,
                                                         self)
@@ -558,7 +561,7 @@ class JacobianPoint:
         small_q = JacobianPoint(q.x, q.y, q.z, self.curve.small_curve)
         r = small_q._scalar_multiplication(invk, _bit_length(invk))
         r = r - small_base_point
-        r._squeeze()
+        r.squeeze()
         # Expected to have c=1
         c = r.x * r.y
         # Return c * this_q (with this_q is q on the current curve)
@@ -593,8 +596,8 @@ class JacobianPoint:
         if not isinstance(point, JacobianPoint):
             raise TypeError("Invalid type %s, expected type %s." % \
                                 (type(point), JacobianPoint))
-        self._squeeze()
-        point._squeeze()
+        self.squeeze()
+        point.squeeze()
         return (self.x == point.x) & (self.y == point.y) & (self.z == point.z)
 
     def __ne__(self, point):

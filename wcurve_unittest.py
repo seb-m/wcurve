@@ -41,6 +41,10 @@ class TestWCurveArithmetic(unittest.TestCase):
         self.assertEqual(r, 2 * self.curve.base_point)
         r = self.curve.point_at_infinity + self.curve.point_at_infinity
         self.assertEqual(r, self.curve.point_at_infinity)
+        s1 = random.SystemRandom().randint(1, self.curve.n - 1)
+        s2 = random.SystemRandom().randint(1, self.curve.n - 1)
+        r = s1 * self.curve.base_point + s2 * self.curve.base_point
+        self.assertEqual(r, (s1 + s2) * self.curve.base_point)
 
     def testMul(self):
         r = self.curve.n * self.curve.base_point
