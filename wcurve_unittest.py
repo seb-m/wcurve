@@ -17,7 +17,7 @@ class TestWCurveArithmetic(unittest.TestCase):
         self.assertEqual(self.curve.point_at_infinity, self.curve.point_at_infinity)
         self.assertEqual(self.curve.point_at_infinity, -self.curve.point_at_infinity)
         inf = copy.copy(self.curve.point_at_infinity)
-        inf._multiple(10)
+        inf._to_equivalent(10)
         self.assertEqual(self.curve.point_at_infinity, inf)
         self.assertFalse(self.curve.base_point == self.curve.point_at_infinity)
         self.assertTrue(self.curve.base_point != self.curve.point_at_infinity)
@@ -84,14 +84,14 @@ class TestWCurveArithmetic(unittest.TestCase):
         p = wcurve.JacobianPoint.uncompress(self.curve.base_point.x, 1 - bit_y, self.curve)
         self.assertEqual(p, -self.curve.base_point)
 
-class TestVerifiedScalarMul(unittest.TestCase):
+class TestScalarMulInfective(unittest.TestCase):
     def setUp(self):
         self.curve = wcurve.secp256r1_curve_with_correctness_check()
 
     def testMul(self):
         sk = random.SystemRandom().randint(1, self.curve.n - 1)
         pk1 = self.curve.base_point.scalar_multiplication(sk)
-        pk2 = self.curve.base_point.verified_scalar_multiplication(sk)
+        pk2 = self.curve.base_point.scalar_multiplication_infective(sk)
         self.assertEqual(pk1, pk2)
 
 if __name__ == '__main__':

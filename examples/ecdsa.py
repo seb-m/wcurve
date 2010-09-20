@@ -1,3 +1,8 @@
+"""
+ECDSA signature scheme.
+
+Requires Python >= 2.6.
+"""
 import hashlib
 import random
 import wcurve

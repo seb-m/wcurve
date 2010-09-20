@@ -29,7 +29,7 @@ Beside to the usual scalar multiplication algorithm (transparently used with
 secp256r1_curve()) another algorithm is implemented. This one additionally
 checks the correctness of its result before returning it. It is automatically
 used when a secp256r1_curve_with_correctness_check() curve is instantiated. Also
-see verified_scalar_multiplication() for more details.
+see scalar_multiplication_infective() for more details.
 
 Dependancies: Python >= 2.4
 Author: Sebastien Martini (seb@dbzteam.org)
@@ -283,7 +283,7 @@ class JacobianPoint:
             setattr(self, coord, t0)
             setattr(point, coord, t1)
 
-    def _multiple(self, lmbda):
+    def _to_equivalent(self, lmbda):
         """
         Compute (lmbda^2.x, lmbda^3.y, lmbda.z) in-place.
         """
@@ -298,10 +298,12 @@ class JacobianPoint:
 
     def squeeze(self):
         """
-        'Squeeze' current coordinates in-place: if the point at infinity it is
-        set to (1 : 1 : 0) otherwise it will be represented by (x : y : 1).
-        Before modifying the representation this method checks that the point is
-        a point on the curve.
+        Transform this point to an equivalent representative having 1 for z
+        coordinate (x : y : 1) when point is not at infinity and having x and y
+        to 1 (1 : 1 : 0) when point is at infinity. This method is used for
+        faciliting points comparisons and to convert a point to its affine
+        representation. Before any transformation this method checks that the
+        point is on curve.
         """
         # The point must be a valid point on curve. Otherwise it would
         # modify this point to a non-equivalent representation.
@@ -442,11 +444,11 @@ class JacobianPoint:
             return 2 * self
 
         # The two points must share the same z coordinates, it should be
-        # more efficient to call _multiple() than to_affine() which would
+        # more efficient to call _to_equivalent() than to_affine() which would
         # use a costly modular exponentiation with a big exponent.
         tmpz = self.z
-        self._multiple(point.z)
-        point._multiple(tmpz)
+        self._to_equivalent(point.z)
+        point._to_equivalent(tmpz)
         r, _ = self.cozarithmetic.zaddu(self, point)
         return r
 
@@ -510,7 +512,7 @@ class JacobianPoint:
             raise ValueError("Invalid result point.")
         return result_point
 
-    def verified_scalar_multiplication(self, scalar):
+    def scalar_multiplication_infective(self, scalar):
         """
         This scalar multiplication checks the correctness of the final result
         but in a way where a non-exploitable wrong result is returned if an
@@ -523,7 +525,7 @@ class JacobianPoint:
 
         See function secp256r1_curve_with_correctness_check() for more details
         and an example. Also read the docstring of scalar_multiplication() it
-        mostly applies to this method too.
+        mostly applies to this method as well.
         """
         if (not hasattr(self.curve, 'small_curve') or
             not hasattr(self.curve, 'big_curve')):
@@ -574,11 +576,11 @@ class JacobianPoint:
 
         The choice of the underlying scalar multiplication algorithm will
         depend on the instantiated curve type. If the curve supports checking
-        the result it will call verified_scalar_multiplication() otherwise
+        the result it will call scalar_multiplication_infective() otherwise
         scalar_multiplication() will be called.
         """
         if self.curve.check_correctness:
-            return self.verified_scalar_multiplication(scalar)
+            return self.scalar_multiplication_infective(scalar)
         return self.scalar_multiplication(scalar)
 
     def __rmul__(self, scalar):
@@ -704,9 +706,9 @@ def _p256r1_p112r1_curve():
 
 def secp256r1_curve_with_correctness_check():
     """
-    This curve use auxiliary curves to ensure scalar multiplication results
-    are mathematically correct. Use this curve when you want a
-    secp256r1_curve() with formal checking of its result.
+    This curve uses auxiliary curves to ensure scalar multiplication results
+    are mathematically correct. Use this curve when you expect secp256r1_curve()
+    returning a valid result.
 
     Example:
         curve = wcurve.secp256r1_curve_with_correctness_check()
@@ -714,7 +716,7 @@ def secp256r1_curve_with_correctness_check():
         # Contrarily to secp256r1_curve() the internal scalar multiplication
         # will check the correctness of its result before returning it. Be aware
         # extra-operation has a noticeable computational cost. The method
-        # called internally is JacobianPoint.verified_scalar_multiplication.
+        # called internally is JacobianPoint.scalar_multiplication_infective().
         pk1 = sk * curve.base_point
         # Despite this verification the result is expected to be the same than
         # with the traditional algorithm.
