@@ -296,7 +296,7 @@ class JacobianPoint:
         self.y = self.y * t1 % self.curve.p
         self.z = self.z * lmbda % self.curve.p
 
-    def squeeze(self):
+    def normalize(self):
         """
         Transform this point to an equivalent representative having 1 for z
         coordinate (x : y : 1) when point is not at infinity and having x and y
@@ -308,7 +308,7 @@ class JacobianPoint:
         # The point must be a valid point on curve. Otherwise it would
         # modify this point to a non-equivalent representation.
         assert self.is_on_curve()
-        # Already squeezed.
+        # Already normalized.
         if self.z % self.curve.p == 1:
             return
         # Point at infinity.
@@ -331,7 +331,7 @@ class JacobianPoint:
         Does not work for point at infinity.
         """
         assert not self.is_at_infinity()
-        self.squeeze()
+        self.normalize()
         return self.x, self.y
 
     def compression_bit_y(self):
@@ -340,7 +340,7 @@ class JacobianPoint:
         Does not work for point at infinity.
         """
         assert not self.is_at_infinity()
-        self.squeeze()
+        self.normalize()
         return self.y & 1
 
     @staticmethod
@@ -461,7 +461,7 @@ class JacobianPoint:
         Do not call this method directly unless you know what you're doing.
         Instead use __mul__ and __rmul__ methods.
         """
-        self.squeeze()
+        self.normalize()
         return self.cozarithmetic.scalar_multiplication(scalar,
                                                         scalar_num_bits,
                                                         self)
@@ -563,7 +563,7 @@ class JacobianPoint:
         small_q = JacobianPoint(q.x, q.y, q.z, self.curve.small_curve)
         r = small_q._scalar_multiplication(invk, _bit_length(invk))
         r = r - small_base_point
-        r.squeeze()
+        r.normalize()
         # Expected to have c=1
         c = r.x * r.y
         # Return c * this_q (with this_q is q on the current curve)
@@ -598,8 +598,8 @@ class JacobianPoint:
         if not isinstance(point, JacobianPoint):
             raise TypeError("Invalid type %s, expected type %s." % \
                                 (type(point), JacobianPoint))
-        self.squeeze()
-        point.squeeze()
+        self.normalize()
+        point.normalize()
         return (self.x == point.x) & (self.y == point.y) & (self.z == point.z)
 
     def __ne__(self, point):
