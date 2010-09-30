@@ -48,7 +48,7 @@ def verify(public_key, signature, msg):
     q = u1 * curve.base_point + u2 * public_key
     if q.is_at_infinity():
         return False
-    v = q.to_affine()[0] % curve.n
+    v = q.get_affine_x() % curve.n
     if r == v:
         return True
     return False

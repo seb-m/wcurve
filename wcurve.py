@@ -345,6 +345,12 @@ class JacobianPoint:
         self.normalize()
         return self.x, self.y
 
+    def get_affine_x(self):
+        return self.to_affine[0]
+
+    def get_affine_y(self):
+        return self.to_affine[1]
+
     def compression_bit_y(self):
         """
         Return the compression bit odd(y) associated to the y coordinate.
