@@ -28,8 +28,12 @@ without dummy operation and conditional branching instructions are avoided.
 Beside to the usual scalar multiplication algorithm (transparently used with
 secp256r1_curve()) another algorithm is implemented. This one additionally
 checks the correctness of its result before returning it. It is automatically
-used when a secp256r1_curve_with_correctness_check() curve is instantiated. Also
-see scalar_multiplication_infective() for more details.
+used when a secp256r1_curve_infective() curve is instantiated. Also see
+scalar_multiplication_infective() for more details.
+
+Note: functions, classes and methods prefixed with '_' are meant to remain
+      privates to this module, there are not intended to be called directly
+      from external client code.
 
 Dependancies: Python >= 2.4
 Author: Sebastien Martini (seb@dbzteam.org)
@@ -41,9 +45,6 @@ import random
 __author__ = "Sebastien Martini (seb@dbzteam.org)"
 
 __version__ = "0.0.6"
-
-# Functions, classes, methods prefixed with '_' are privates and are not
-# intended to be called directly.
 
 def _check_integer_type(val):
     """
@@ -87,12 +88,15 @@ def _cond_swap_values(swap, u, v):
 class _FpArithmetic:
     def __init__(self, p):
         """
-        You shouldn't have to instantiate this class directly.
-        p must be a prime.
+        You shouldn't have to instantiate this class directly. If you do
+        it anyway, you must ensure that p is a prime.
         """
         self.p = p
 
     def exp(self, g, k, k_num_bits):
+        """
+        Montgomery Ladder. Compute g^k mod self.p with |k| = k_num_bits.
+        """
         return self._exp(g, k, k_num_bits, self.p)
 
     def _exp(self, g, k, k_num_bits, n):
@@ -112,7 +116,7 @@ class _FpArithmetic:
 
     def inverse(self, g):
         """
-        Returns inverse of g mod p.
+        Returns inverse of g mod self.p.
         """
         return self._inverse(g, self.p)
 
@@ -124,7 +128,7 @@ class _FpArithmetic:
             raise ValueError("%d has no inverse mod %d." % (g, n))
         return self._exp(g, n - 2, _bit_length(n - 2), n)
 
-    def crt(self, l, modulus):
+    def crt(self, lst, modulus):
         """
         Compute a list of crts sharing the same modulus.
         """
@@ -136,7 +140,7 @@ class _FpArithmetic:
         def _sum(a):
             t = sum(map(lambda x, y, z: x * y * z, a, linv, ldiv))
             return t % prod
-        return tuple(map(_sum, l))
+        return tuple(map(_sum, lst))
 
 
 class _CoZArithmetic:
@@ -346,9 +350,15 @@ class JacobianPoint:
         return self.x, self.y
 
     def get_affine_x(self):
+        """
+        Returns the affine coordinate x of this point.
+        """
         return self.to_affine[0]
 
     def get_affine_y(self):
+        """
+        Returns the affine coordinate x of this point.
+        """
         return self.to_affine[1]
 
     def compression_bit_y(self):
@@ -540,9 +550,9 @@ class JacobianPoint:
         Otto and Seifert. It also uses 'infective computations' as suggested
         by the modified algorithm at the end of section 4.1.
 
-        See function secp256r1_curve_with_correctness_check() for more details
-        and an example. Also read the docstring of scalar_multiplication() it
-        mostly applies to this method as well.
+        See function secp256r1_curve_infective() for more details and an
+        example. Also read the docstring of scalar_multiplication() it mostly
+        applies to this method as well.
         """
         if (not hasattr(self.curve, 'small_curve') or
             not hasattr(self.curve, 'big_curve')):
@@ -718,14 +728,14 @@ def _p256r1_p112r1_curve():
     h = 0
     return _Curve(a, b, p, gx, gy, gz, n, h)
 
-def secp256r1_curve_with_correctness_check():
+def secp256r1_curve_infective():
     """
     This curve uses auxiliary curves to ensure scalar multiplication results
     are mathematically correct. Use this curve when you expect secp256r1_curve()
     returning a valid result.
 
     Example:
-        curve = wcurve.secp256r1_curve_with_correctness_check()
+        curve = wcurve.secp256r1_curve_infective()
         sk = random.SystemRandom().randint(1, curve.n - 1)
         # Contrarily to secp256r1_curve() the internal scalar multiplication
         # will check the correctness of its result before returning it. Be aware

@@ -86,7 +86,7 @@ class TestWCurveArithmetic(unittest.TestCase):
 
 class TestScalarMulInfective(unittest.TestCase):
     def setUp(self):
-        self.curve = wcurve.secp256r1_curve_with_correctness_check()
+        self.curve = wcurve.secp256r1_curve_infective()
 
     def testMul(self):
         sk = random.SystemRandom().randint(1, self.curve.n - 1)
