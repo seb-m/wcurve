@@ -25,11 +25,13 @@ As implemented, single-scalar multiplications are not protected against DPA and
 some types of fault attacks. However, exponentiations algorithms are regulars,
 without dummy operation and conditional branching instructions are avoided.
 
-Beside to the usual scalar multiplication algorithm (transparently used with
-secp256r1_curve()) another algorithm is implemented. This one additionally
-checks the correctness of its result before returning it. It is automatically
-used when a secp256r1_curve_infective() curve is instantiated. Also see
-scalar_multiplication_infective() for more details.
+Beside to the usual scalar multiplication algorithm transparently used when
+secp256r1_curve() is called, another algorithm is implemented. This one
+additionally implicitely ensure the correctness of its result before returning
+it and in the case where the result were wrong it would disclose no useful
+information to the attacker. This algorithm is automatically used when a
+secp256r1_curve_infective() curve is instantiated. Also read the comments in
+scalar_multiplication_infective() for more details on 'infective computations'.
 
 Note: functions, classes and methods prefixed with '_' are meant to remain
       privates to this module, there are not intended to be called directly
@@ -603,7 +605,7 @@ class JacobianPoint:
         the result it will call scalar_multiplication_infective() otherwise
         scalar_multiplication() will be called.
         """
-        if self.curve.check_correctness:
+        if self.curve.infective:
             return self.scalar_multiplication_infective(scalar)
         return self.scalar_multiplication(scalar)
 
@@ -663,10 +665,10 @@ class _Curve:
         # Fixme: implement an order() method in JacobianPoint class?
         self.n = n  # order(base_point)
         self.h = h  # cofactor
-        self.check_correctness = False
+        self.infective = False
 
-    def set_check_correctness(self, on):
-        self.check_correctness = on
+    def set_infective(self):
+        self.infective = True
 
 
 def secp256r1_curve():
@@ -737,10 +739,11 @@ def secp256r1_curve_infective():
     Example:
         curve = wcurve.secp256r1_curve_infective()
         sk = random.SystemRandom().randint(1, curve.n - 1)
-        # Contrarily to secp256r1_curve() the internal scalar multiplication
-        # will check the correctness of its result before returning it. Be aware
-        # extra-operation has a noticeable computational cost. The method
-        # called internally is JacobianPoint.scalar_multiplication_infective().
+        # Contrarily to secp256r1_curve() this scalar multiplication will either
+        # provide a valid or a wrong result. But in the latter case it will be
+        # meaningless for the attacker. Beware it introduces extra-computations
+        # with noticeable computational costs. The scalar mult method internally
+        # called is JacobianPoint.scalar_multiplication_infective().
         pk1 = sk * curve.base_point
         # Despite this verification the result is expected to be the same than
         # with the traditional algorithm.
@@ -748,7 +751,7 @@ def secp256r1_curve_infective():
         assert pk1 == pk2
     """
     p256r1 = secp256r1_curve()
-    p256r1.set_check_correctness(True)
+    p256r1.set_infective()
     p256r1.small_curve = _secp112r1_curve()
     p256r1.big_curve = _p256r1_p112r1_curve()
     return p256r1
