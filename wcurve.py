@@ -88,13 +88,14 @@ class _FpArithmetic:
     def __init__(self, p):
         """
         You shouldn't have to instantiate this class directly.
+        p must be a prime.
         """
         self.p = p
 
-    def modular_exponentiation(self, g, k, k_num_bits):
-        return self._modular_exponentiation(g, k, k_num_bits, self.p)
+    def exp(self, g, k, k_num_bits):
+        return self._exp(g, k, k_num_bits, self.p)
 
-    def _modular_exponentiation(self, g, k, k_num_bits, n):
+    def _exp(self, g, k, k_num_bits, n):
         """
         Montgomery Ladder. Compute g^k mod n with |k| = k_num_bits.
         """
@@ -109,6 +110,20 @@ class _FpArithmetic:
             k_num_bits -= 1
         return r0
 
+    def inverse(self, g):
+        """
+        Returns inverse of g mod p.
+        """
+        return self._inverse(g, self.p)
+
+    def _inverse(self, g, n):
+        """
+        Returns inverse of g mod n.
+        """
+        if g % n == 0:
+            raise ValueError("%d has no inverse mod %d." % (g, n))
+        return self._exp(g, n - 2, _bit_length(n - 2), n)
+
     def crt(self, l, modulus):
         """
         Compute a list of crts sharing the same modulus.
@@ -117,10 +132,7 @@ class _FpArithmetic:
         for m in modulus:
             prod *= m
         ldiv = tuple(map(lambda m: prod // m, modulus))
-        def invert(x, m):
-            return self._modular_exponentiation(x, m - 2,
-                                                _bit_length(m - 2), m)
-        linv = tuple(map(invert, ldiv, modulus))
+        linv = tuple(map(self._inverse, ldiv, modulus))
         def _sum(a):
             t = sum(map(lambda x, y, z: x * y * z, a, linv, ldiv))
             return t % prod
@@ -316,10 +328,9 @@ class JacobianPoint:
             self.x = self.y = 1
             self.z = 0
         else:
-            k = self.curve.p - 4
             # k is public so there is no worry about using bit_length() here.
-            t1 = self.fparithmetic.modular_exponentiation(self.z, k,
-                                                          _bit_length(k))
+            t1 = self.fparithmetic.exp(self.z, 3, _bit_length(3))
+            t1 = self.fparithmetic.inverse(t1)
             self.y = t1 * self.y % self.curve.p
             t1 = t1 * self.z
             self.x = t1 * self.x % self.curve.p
@@ -356,7 +367,7 @@ class JacobianPoint:
         y2 = (t + curve.a * x + curve.b)  % curve.p
         # y = +/- y2 ** ((p + 1) / 4)
         e = (curve.p + 1) // 4
-        y = _FpArithmetic(curve.p).modular_exponentiation(y2, e, _bit_length(e))
+        y = _FpArithmetic(curve.p).exp(y2, e, _bit_length(e))
         if (y & 1) != bit_y:
             assert y != 0
             y = -y % curve.p
@@ -554,11 +565,8 @@ class JacobianPoint:
 
         # q = scalar * big_base_point
         q = big_base_point._scalar_multiplication(scalar, _bit_length(scalar))
+        invk = _FpArithmetic(self.curve.small_curve.n).inverse(scalar)
 
-        smalln = self.curve.small_curve.n
-        invk = self.fparithmetic._modular_exponentiation(scalar, smalln - 2,
-                                                         _bit_length(smalln-2),
-                                                         smalln)
         # r = 1/k * small_q - small_base_point
         small_q = JacobianPoint(q.x, q.y, q.z, self.curve.small_curve)
         r = small_q._scalar_multiplication(invk, _bit_length(invk))

@@ -29,8 +29,7 @@ def sign(secret_key, msg):
         if r == 0:
             continue
         e = _big_int_unpack_be(hashlib.sha256(msg).digest())
-        modexp = wcurve._FpArithmetic(curve.n).modular_exponentiation
-        kinv = modexp(k, curve.n - 2, wcurve._bit_length(curve.n - 2))
+        kinv = wcurve._FpArithmetic(curve.n).inverse(k)
         s = (kinv * (e + r * secret_key)) % curve.n
         if s == 0:
             continue
@@ -43,7 +42,7 @@ def verify(public_key, signature, msg):
         if not (1 <= v <= (curve.n - 1)):
             return False
     e = _big_int_unpack_be(hashlib.sha256(msg).digest())
-    sinv = pow(s, curve.n - 2, curve.n)
+    sinv = wcurve._FpArithmetic(curve.n).inverse(s)
     u1 = e * sinv % curve.n
     u2 = r * sinv % curve.n
     q = u1 * curve.base_point + u2 * public_key
