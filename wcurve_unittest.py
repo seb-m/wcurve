@@ -64,7 +64,7 @@ class TestWCurveArithmetic(unittest.TestCase):
         self.assertRaises(ValueError, lambda: 2 * b)
         r = 0 * self.curve.base_point
         self.assertEqual(r, self.curve.point_at_infinity)
-        r1 = -42 * self.curve.base_point
+        r1 = (-42) * self.curve.base_point
         r2 = ((-42) % self.curve.n) * self.curve.base_point
         self.assertEqual(r1, r2)
 

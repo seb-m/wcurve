@@ -28,7 +28,8 @@ classif = [
 setup(
     name='wcurve',
     version='0.0.7',
-    description='wcurve implements basic arithmetic operations on elliptic curves in short Weiertsrass form.',
+    description=('wcurve implements basic arithmetic operations on elliptic'
+                 ' curves in short Weiertsrass form.'),
     author='Sebastien Martini',
     author_email='seb@dbzteam.org',
     license='MIT License',
