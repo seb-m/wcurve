@@ -6,6 +6,8 @@
 wcurve
 =======
 
+Project URL: http://github.com/seb-m/wcurve
+
 .. toctree::
    :maxdepth: 4
 

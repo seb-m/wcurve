@@ -1,8 +1,9 @@
 = wcurve =
 
-Project URL: http://github.com/seb-m/wcurve
-Dependencies: Python >= 2.4
-License: MIT
+Project URL   : http://github.com/seb-m/wcurve
+Documentation : http://seb-m.github.com/wcurve
+Dependencies  : Python >= 2.4
+License       : MIT
 
 
 = Description =
@@ -20,8 +21,6 @@ Example:
     pk = sk * curve.base_point
     # Get its affine coordinates
     pkx, pky = pk.to_affine()
-
-See directly wcurve.py for a more detailed description.
 
 
 = Install =
