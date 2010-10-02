@@ -1,0 +1,406 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+    <title>wcurve &mdash; wcurve v0.0.9 documentation</title>
+    <link rel="stylesheet" href="static/default.css" type="text/css" />
+    <link rel="stylesheet" href="static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.0.9',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="static/jquery.js"></script>
+    <script type="text/javascript" src="static/underscore.js"></script>
+    <script type="text/javascript" src="static/doctools.js"></script>
+    <link rel="top" title="wcurve v0.0.9 documentation" href="#" />
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li><a href="#">wcurve v0.0.9 documentation</a> &raquo;</li>
+      </ul>
+    </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+
+  <div class="section" id="wcurve">
+<h1>wcurve<a class="headerlink" href="#wcurve" title="Permalink to this headline">¶</a></h1>
+<p>Project URL: <a class="reference external" href="http://github.com/seb-m/wcurve">http://github.com/seb-m/wcurve</a></p>
+<div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+<div class="section" id="module-wcurve">
+<span id="description"></span><h2>Description<a class="headerlink" href="#module-wcurve" title="Permalink to this headline">¶</a></h2>
+<p>This package implements basic arithmetic operations such as point addition and
+single-scalar multiplication on elliptic curves in short Weiertsrass form.</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">wcurve</span><span class="o">,</span> <span class="nn">random</span>
+<span class="c"># Instantiate secp256r1 aka nistp256r1 standardized curve</span>
+<span class="n">curve</span>  <span class="o">=</span> <span class="n">wcurve</span><span class="o">.</span><span class="n">secp256r1_curve</span><span class="p">()</span>
+<span class="c"># Generate a new secret value</span>
+<span class="n">sk</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">SystemRandom</span><span class="p">()</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">curve</span><span class="o">.</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+<span class="c"># Compute the public key associated with the previous secret</span>
+<span class="n">pk</span> <span class="o">=</span> <span class="n">sk</span> <span class="o">*</span> <span class="n">curve</span><span class="o">.</span><span class="n">base_point</span>
+<span class="c"># Get its affine coordinates</span>
+<span class="n">pkx</span><span class="p">,</span> <span class="n">pky</span> <span class="o">=</span> <span class="n">pk</span><span class="o">.</span><span class="n">to_affine</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Internally, curve points are represented in Jacobian coordinates. There&#8217;s
+currently no optimized implementation for the double scalar multiplication
+operation, it is merely the addition of two independents single-scalar
+multiplications.</p>
+<p>The primary goal of this code is to keep things simple and offer a pure
+Python standalone interface to some of the currently most used curves.</p>
+<p>As implemented, single-scalar multiplications are not protected against DPA
+and some types of fault attacks. However, exponentiations algorithms are
+regulars, without dummy operation and conditional branching instructions are
+avoided.</p>
+<p>Beside to the usual scalar multiplication algorithm transparently used when
+<a class="reference internal" href="#wcurve.secp256r1_curve" title="wcurve.secp256r1_curve"><tt class="xref py py-func docutils literal"><span class="pre">secp256r1_curve()</span></tt></a> is instantiated, another algorithm is also
+implemented. This one additionally implicitely ensure the correctness of its
+result and in the case where the result happened to be wrong it would disclose
+no useful information to the attacker. This algorithm is automatically used when
+a <a class="reference internal" href="#wcurve.secp256r1_curve_infective" title="wcurve.secp256r1_curve_infective"><tt class="xref py py-func docutils literal"><span class="pre">secp256r1_curve_infective()</span></tt></a> curve is instantiated. For more details
+on <em>infective computations</em> <a class="footnote-reference" href="#id6" id="id1">[2]</a> read the docstring of
+<a class="reference internal" href="#wcurve.JacobianPoint.scalar_multiplication_infective" title="wcurve.JacobianPoint.scalar_multiplication_infective"><tt class="xref py py-meth docutils literal"><span class="pre">JacobianPoint.scalar_multiplication_infective()</span></tt></a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">functions, classes and methods prefixed with _ in the source code are private
+to this module, there are not intended to be called from external client code.</p>
+</div>
+</div>
+<div class="section" id="details">
+<h2>Details<a class="headerlink" href="#details" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="curves">
+<h3>Curves<a class="headerlink" href="#curves" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="wcurve.secp256r1_curve">
+<tt class="descclassname">wcurve.</tt><tt class="descname">secp256r1_curve</tt><big>(</big><big>)</big><a class="headerlink" href="#wcurve.secp256r1_curve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Factory function returning a secp256r1 curve (as defined in <a class="reference external" href="http://www.secg.org/download/aid-784/sec2-v2.pdf">this PDF
+file</a>). This
+<a class="reference internal" href="#wcurve._Curve" title="wcurve._Curve"><tt class="xref py py-class docutils literal"><span class="pre">_Curve</span></tt></a> object can be manipulated as a singleton and can be
+reused with different points.</p>
+<p>It also provide useful attributes:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">curve</span> <span class="o">=</span> <span class="n">wcurve</span><span class="o">.</span><span class="n">secp256r1_curve</span><span class="p">()</span>
+<span class="c"># Base point (instance of JacobianPoint)</span>
+<span class="n">curve</span><span class="o">.</span><span class="n">base_point</span>
+<span class="c"># Base point&#39;s order</span>
+<span class="n">curve</span><span class="o">.</span><span class="n">n</span>
+<span class="c"># Curve parameters and cofactor</span>
+<span class="n">curve</span><span class="o">.</span><span class="n">a</span>
+<span class="n">curve</span><span class="o">.</span><span class="n">b</span>
+<span class="n">curve</span><span class="o">.</span><span class="n">h</span>
+</pre></div>
+</div>
+<p>As scalar multiplication algorithm it will use
+<a class="reference internal" href="#wcurve.JacobianPoint.scalar_multiplication" title="wcurve.JacobianPoint.scalar_multiplication"><tt class="xref py py-meth docutils literal"><span class="pre">JacobianPoint.scalar_multiplication()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="wcurve.secp256r1_curve_infective">
+<tt class="descclassname">wcurve.</tt><tt class="descname">secp256r1_curve_infective</tt><big>(</big><big>)</big><a class="headerlink" href="#wcurve.secp256r1_curve_infective" title="Permalink to this definition">¶</a></dt>
+<dd><p>This curve uses auxiliary curves to ensure scalar multiplication&#8217;s result
+is either mathematically correct or otherwise returning a wrong result
+not disclosing no useful information <a class="footnote-reference" href="#id6" id="id2">[2]</a>.</p>
+<p>As scalar multiplication algorithm it will use
+<a class="reference internal" href="#wcurve.JacobianPoint.scalar_multiplication_infective" title="wcurve.JacobianPoint.scalar_multiplication_infective"><tt class="xref py py-meth docutils literal"><span class="pre">JacobianPoint.scalar_multiplication_infective()</span></tt></a>.</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">curve</span> <span class="o">=</span> <span class="n">wcurve</span><span class="o">.</span><span class="n">secp256r1_curve_infective</span><span class="p">()</span>
+<span class="n">sk</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">SystemRandom</span><span class="p">()</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">curve</span><span class="o">.</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+<span class="c"># This scalar-multiplication introduces extra-computations with</span>
+<span class="c"># noticeable computational costs.</span>
+<span class="n">pk1</span> <span class="o">=</span> <span class="n">sk</span> <span class="o">*</span> <span class="n">curve</span><span class="o">.</span><span class="n">base_point</span>
+<span class="c"># pk1 expected to be the same than as if it had been computed with the</span>
+<span class="c"># usual algorithm.</span>
+<span class="n">pk2</span> <span class="o">=</span> <span class="n">curve</span><span class="o">.</span><span class="n">base_point</span><span class="o">.</span><span class="n">scalar_multiplication</span><span class="p">(</span><span class="n">sk</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pk1</span> <span class="o">==</span> <span class="n">pk2</span>
+</pre></div>
+</div>
+<p>The object instantiated and returned is a <a class="reference internal" href="#wcurve._Curve" title="wcurve._Curve"><tt class="xref py py-class docutils literal"><span class="pre">_Curve</span></tt></a> object which
+can be manipulated as a singleton and be reused with different points. It
+also provide useful attributes, see docstring of <a class="reference internal" href="#wcurve.secp256r1_curve" title="wcurve.secp256r1_curve"><tt class="xref py py-func docutils literal"><span class="pre">secp256r1_curve()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="wcurve._Curve">
+<em class="property">class </em><tt class="descclassname">wcurve.</tt><tt class="descname">_Curve</tt><big>(</big><em>a</em>, <em>b</em>, <em>p</em>, <em>gx</em>, <em>gy</em>, <em>gz</em>, <em>n</em>, <em>h</em><big>)</big><a class="headerlink" href="#wcurve._Curve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to represent a Weierstrass curve
+y<sup>2</sup> = x<sup>3</sup> + a.x.z<sup>4</sup> + b.z<sup>6</sup> over
+prime field Fp.</p>
+<p>The base point is represented by the triplet <tt class="docutils literal"><span class="pre">(gx,</span> <span class="pre">gy,</span> <span class="pre">gz)</span></tt>,
+<tt class="xref py py-attr docutils literal"><span class="pre">n</span></tt> is the base point&#8217;s order and <tt class="xref py py-attr docutils literal"><span class="pre">h</span></tt> is its cofactor.</p>
+<p>Once instantiated a <a class="reference internal" href="#wcurve._Curve" title="wcurve._Curve"><tt class="xref py py-class docutils literal"><span class="pre">_Curve</span></tt></a> object exposes these parameters
+as attributes under the same name.</p>
+<p>This class is actually marked as private because there is currently no
+method implemented for asserting the validity of a curve. Therefore
+it is extremely important to avoid constructing a new curve by calling
+this class without validating its parameters. That&#8217;s the reason why
+there are factory functions such as <a class="reference internal" href="#wcurve.secp256r1_curve" title="wcurve.secp256r1_curve"><tt class="xref py py-func docutils literal"><span class="pre">secp256r1_curve()</span></tt></a> whose
+the purpose is to it automatically build and return a standardized curve
+from validated parameters. Also it is important to not accept
+parameters/curves settings from third parties without validating them.
+The prefered way is instead to always use your own parameters and
+inform the remote party of your choices.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="class-jacobianpoint">
+<h3>Class JacobianPoint<a class="headerlink" href="#class-jacobianpoint" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="wcurve.JacobianPoint">
+<em class="property">class </em><tt class="descclassname">wcurve.</tt><tt class="descname">JacobianPoint</tt><big>(</big><em>x</em>, <em>y</em>, <em>z</em>, <em>curve</em><big>)</big><a class="headerlink" href="#wcurve.JacobianPoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Point representation in Jacobian coordinates. It uses Co-Z arithmetic
+<a class="footnote-reference" href="#id5" id="id3">[1]</a> to compute operations between curve points.</p>
+<p><tt class="xref py py-attr docutils literal"><span class="pre">x</span></tt>, <tt class="xref py py-attr docutils literal"><span class="pre">y</span></tt>, <tt class="xref py py-attr docutils literal"><span class="pre">z</span></tt> are the Jacobian coordinates of
+this point, curve is the underlying/associated curve. curve must be a
+valid curve, it is the responsability of the caller to provide a valid
+and secure curve. curve is likely an instance of <a class="reference internal" href="#wcurve._Curve" title="wcurve._Curve"><tt class="xref py py-class docutils literal"><span class="pre">_Curve</span></tt></a>.</p>
+<dl class="method">
+<dt id="wcurve.JacobianPoint.__add__">
+<tt class="descname">__add__</tt><big>(</big><em>point</em><big>)</big><a class="headerlink" href="#wcurve.JacobianPoint.__add__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds up together this point with another point and returns the result.</p>
+<p>Very inefficient algorithm when used for double scalar multiplication,
+the only upside in this case is that it is formed of regular operations.
+Additions with identity points are handled as special cases.</p>
+<p>Usually points are public elements (at least in the algorithms I know)
+therefore we&#8217;re being slightly less careful in how we are manipulating
+and comparing them.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="wcurve.JacobianPoint.__eq__">
+<tt class="descname">__eq__</tt><big>(</big><em>point</em><big>)</big><a class="headerlink" href="#wcurve.JacobianPoint.__eq__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> when the two points are equals. The compared points
+might have to be modified in-place in order to obtain an equivalent
+representation facilitating their comparison.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="wcurve.JacobianPoint.__mul__">
+<tt class="descname">__mul__</tt><big>(</big><em>scalar</em><big>)</big><a class="headerlink" href="#wcurve.JacobianPoint.__mul__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <tt class="docutils literal"><span class="pre">scalar</span> <span class="pre">*</span> <span class="pre">self</span></tt> with <tt class="docutils literal"><span class="pre">self</span></tt> representing this point.</p>
+<p>The choice of the underlying scalar multiplication algorithm will
+depend on the instantiated curve type. If the curve supports infective
+computations it will call <a class="reference internal" href="#wcurve.JacobianPoint.scalar_multiplication_infective" title="wcurve.JacobianPoint.scalar_multiplication_infective"><tt class="xref py py-meth docutils literal"><span class="pre">scalar_multiplication_infective()</span></tt></a>
+otherwise it will call <a class="reference internal" href="#wcurve.JacobianPoint.scalar_multiplication" title="wcurve.JacobianPoint.scalar_multiplication"><tt class="xref py py-meth docutils literal"><span class="pre">scalar_multiplication()</span></tt></a>.</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">curve</span> <span class="o">=</span> <span class="n">wcurve</span><span class="o">.</span><span class="n">secp256r1_curve</span><span class="p">()</span>
+<span class="c"># Will internally call scalar_multiplication()</span>
+<span class="n">p</span> <span class="o">=</span> <span class="mi">42</span> <span class="o">*</span> <span class="n">curve</span><span class="o">.</span><span class="n">base_point</span>
+
+<span class="n">curve</span> <span class="o">=</span> <span class="n">wcurve</span><span class="o">.</span><span class="n">secp256r1_curve_infective</span><span class="p">()</span>
+<span class="c"># Will internally call scalar_multiplication_infective()</span>
+<span class="n">p</span> <span class="o">=</span> <span class="mi">42</span> <span class="o">*</span> <span class="n">curve</span><span class="o">.</span><span class="n">base_point</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="wcurve.JacobianPoint.__neg__">
+<tt class="descname">__neg__</tt><big>(</big><big>)</big><a class="headerlink" href="#wcurve.JacobianPoint.__neg__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the point (x, -y, z).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="wcurve.JacobianPoint.compression_bit_y">
+<tt class="descname">compression_bit_y</tt><big>(</big><big>)</big><a class="headerlink" href="#wcurve.JacobianPoint.compression_bit_y" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the compression bit odd(<tt class="xref py py-attr docutils literal"><span class="pre">y</span></tt>) associated to the
+<tt class="xref py py-attr docutils literal"><span class="pre">y</span></tt> coordinate. Does not work for the point at infinity.
+See example in <a class="reference internal" href="#wcurve.JacobianPoint.uncompress" title="wcurve.JacobianPoint.uncompress"><tt class="xref py py-meth docutils literal"><span class="pre">uncompress()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="wcurve.JacobianPoint.get_affine_x">
+<tt class="descname">get_affine_x</tt><big>(</big><big>)</big><a class="headerlink" href="#wcurve.JacobianPoint.get_affine_x" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the affine coordinate <tt class="xref py py-attr docutils literal"><span class="pre">x</span></tt> of this point.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="wcurve.JacobianPoint.get_affine_y">
+<tt class="descname">get_affine_y</tt><big>(</big><big>)</big><a class="headerlink" href="#wcurve.JacobianPoint.get_affine_y" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the affine coordinate <tt class="xref py py-attr docutils literal"><span class="pre">y</span></tt> of this point.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="wcurve.JacobianPoint.has_valid_order">
+<tt class="descname">has_valid_order</tt><big>(</big><big>)</big><a class="headerlink" href="#wcurve.JacobianPoint.has_valid_order" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the order of this point is the same than the order
+of the base point. This method is part of the validation done by
+<a class="reference internal" href="#wcurve.JacobianPoint.is_valid" title="wcurve.JacobianPoint.is_valid"><tt class="xref py py-meth docutils literal"><span class="pre">is_valid()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="wcurve.JacobianPoint.is_at_infinity">
+<tt class="descname">is_at_infinity</tt><big>(</big><big>)</big><a class="headerlink" href="#wcurve.JacobianPoint.is_at_infinity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if this point is at infinity. This method is part of
+the validation done by <a class="reference internal" href="#wcurve.JacobianPoint.is_valid" title="wcurve.JacobianPoint.is_valid"><tt class="xref py py-meth docutils literal"><span class="pre">is_valid()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="wcurve.JacobianPoint.is_on_curve">
+<tt class="descname">is_on_curve</tt><big>(</big><big>)</big><a class="headerlink" href="#wcurve.JacobianPoint.is_on_curve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if this point is on curve. This method is part of the
+validation done by <a class="reference internal" href="#wcurve.JacobianPoint.is_valid" title="wcurve.JacobianPoint.is_valid"><tt class="xref py py-meth docutils literal"><span class="pre">is_valid()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="wcurve.JacobianPoint.is_valid">
+<tt class="descname">is_valid</tt><big>(</big><big>)</big><a class="headerlink" href="#wcurve.JacobianPoint.is_valid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if this point is valid.</p>
+<p>It checks that this point <tt class="docutils literal"><span class="pre">P</span></tt> meets the following requirements:</p>
+<ol class="arabic simple">
+<li><tt class="docutils literal"><span class="pre">P</span> <span class="pre">!=</span> <span class="pre">O</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">P</span></tt> is on curve</li>
+<li><tt class="docutils literal"><span class="pre">n</span> <span class="pre">*</span> <span class="pre">P</span> <span class="pre">=</span> <span class="pre">O</span></tt></li>
+</ol>
+</dd></dl>
+
+<dl class="method">
+<dt id="wcurve.JacobianPoint.normalize">
+<tt class="descname">normalize</tt><big>(</big><big>)</big><a class="headerlink" href="#wcurve.JacobianPoint.normalize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform this point to an equivalent representative taking 1 as z
+coordinate in <tt class="docutils literal"><span class="pre">(x</span> <span class="pre">:</span> <span class="pre">y</span> <span class="pre">:</span> <span class="pre">1)</span></tt> when the point is not at infinity and
+taking x, y as 1 in <tt class="docutils literal"><span class="pre">(1</span> <span class="pre">:</span> <span class="pre">1</span> <span class="pre">:</span> <span class="pre">0)</span></tt> when the point is at infinity. This
+method is used for faciliting points comparisons and to convert a point
+to its affine representation. Before any transformation takes place this
+method checks that the point is on the curve.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="wcurve.JacobianPoint.scalar_multiplication">
+<tt class="descname">scalar_multiplication</tt><big>(</big><em>scalar</em><big>)</big><a class="headerlink" href="#wcurve.JacobianPoint.scalar_multiplication" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method does the scalar multiplication of the submitted scalar with
+the current point. The scalar value is used as is, it is not randomized,
+it is not reduced mod n. Before the computation this point is validated
+through <a class="reference internal" href="#wcurve.JacobianPoint.is_valid" title="wcurve.JacobianPoint.is_valid"><tt class="xref py py-meth docutils literal"><span class="pre">is_valid()</span></tt></a> and at the end the final result must verify
+<a class="reference internal" href="#wcurve.JacobianPoint.is_on_curve" title="wcurve.JacobianPoint.is_on_curve"><tt class="xref py py-meth docutils literal"><span class="pre">is_on_curve()</span></tt></a>. If any validation step fails, a <tt class="docutils literal"><span class="pre">ValueError</span></tt>
+exception is immediately raised. The result is only guaranteed to be a
+point on the curve, which of course doesn&#8217;t ensure the computations were
+correct.</p>
+<p>There is nothing that prevent the use of first two <em>Coron</em>&#8216;s DPA
+countermeasures (prior to the call of this method).</p>
+<p><strong>Restrictions</strong>: <tt class="docutils literal"><span class="pre">scalar</span> <span class="pre">*</span> <span class="pre">infinity</span></tt> is not permitted.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="wcurve.JacobianPoint.scalar_multiplication_infective">
+<tt class="descname">scalar_multiplication_infective</tt><big>(</big><em>scalar</em><big>)</big><a class="headerlink" href="#wcurve.JacobianPoint.scalar_multiplication_infective" title="Permalink to this definition">¶</a></dt>
+<dd><p>This scalar multiplication checks the correctness of the final result
+but in an implicit way where a non-exploitable wrong result is returned
+if an error is introduced in any part of the computation.</p>
+<p>This implementation follows the Algorithm 8 presented at section 4 of
+<a class="footnote-reference" href="#id6" id="id4">[2]</a> by  <em>Blomer and al.</em> and it also uses <em>infective computations</em>
+as presented by the modified version of this algorithm at the end of
+section 4.1.</p>
+<p>See function <a class="reference internal" href="#wcurve.secp256r1_curve_infective" title="wcurve.secp256r1_curve_infective"><tt class="xref py py-func docutils literal"><span class="pre">secp256r1_curve_infective()</span></tt></a> for more details and for an
+example. Also read comments in <a class="reference internal" href="#wcurve.JacobianPoint.scalar_multiplication" title="wcurve.JacobianPoint.scalar_multiplication"><tt class="xref py py-meth docutils literal"><span class="pre">scalar_multiplication()</span></tt></a> it mostly
+applies to this method as well.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="wcurve.JacobianPoint.to_affine">
+<tt class="descname">to_affine</tt><big>(</big><big>)</big><a class="headerlink" href="#wcurve.JacobianPoint.to_affine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert this point to its affine representation
+(x/z<sup>2</sup>, y/z<sup>3</sup>). Does not work for point at infinity.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="wcurve.JacobianPoint.uncompress">
+<em class="property">static </em><tt class="descname">uncompress</tt><big>(</big><em>x</em>, <em>bit_y</em>, <em>curve</em><big>)</big><a class="headerlink" href="#wcurve.JacobianPoint.uncompress" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uncompress and construct the Jacobian point represented by <tt class="xref py py-attr docutils literal"><span class="pre">x</span></tt>
+and <tt class="xref py py-attr docutils literal"><span class="pre">bit_y</span></tt>. See <a class="reference internal" href="#wcurve.JacobianPoint.compression_bit_y" title="wcurve.JacobianPoint.compression_bit_y"><tt class="xref py py-meth docutils literal"><span class="pre">compression_bit_y()</span></tt></a> for how
+<tt class="xref py py-attr docutils literal"><span class="pre">bit_y</span></tt> was initially obtained. curve&#8217;s order must be a
+congruent of 3 mod 4.</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">curve</span> <span class="o">=</span> <span class="n">wcurve</span><span class="o">.</span><span class="n">secp256r1_curve</span><span class="p">()</span>
+<span class="n">bit_y</span> <span class="o">=</span> <span class="n">curve</span><span class="o">.</span><span class="n">base_point</span><span class="o">.</span><span class="n">compression_bit_y</span><span class="p">()</span>
+<span class="c"># p is a copy of the base point curve.base_point</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">wcurve</span><span class="o">.</span><span class="n">JacobianPoint</span><span class="o">.</span><span class="n">uncompress</span><span class="p">(</span><span class="n">curve</span><span class="o">.</span><span class="n">base_point</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">bit_y</span><span class="p">,</span> <span class="n">curve</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<table class="docutils footnote" frame="void" id="id5" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id3">[1]</a></td><td>Co-Z Addition Formulae and Binary Ladders on Elliptic Curves by <em>Raveen R. Goundar and Marc Joye and Atsuko Miyaji</em>.</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id6" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[2]</td><td><em>(<a class="fn-backref" href="#id1">1</a>, <a class="fn-backref" href="#id2">2</a>, <a class="fn-backref" href="#id4">3</a>)</em> Sign Change Fault Attacks On Elliptic Curve Cryptosystems by <em>Blomer, Otto and Seifert</em>.</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">wcurve</a><ul>
+<li><a class="reference internal" href="#module-wcurve">Description</a></li>
+<li><a class="reference internal" href="#details">Details</a><ul>
+<li><a class="reference internal" href="#curves">Curves</a></li>
+<li><a class="reference internal" href="#class-jacobianpoint">Class JacobianPoint</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+</ul>
+
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li><a href="#">wcurve v0.0.9 documentation</a> &raquo;</li>
+      </ul>
+    </div>
+    <div class="footer">
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+    </div>
+  </body>
+</html>
