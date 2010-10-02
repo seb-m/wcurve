@@ -55,13 +55,12 @@ implemented. This one additionally implicitely ensure the correctness of its
 result and in the case where the result happened to be wrong it would disclose
 no useful information to the attacker. This algorithm is automatically used when
 a :py:func:`secp256r1_curve_infective` curve is instantiated. For more details
-on *infective computations* [ref2]_ read the docstring of
+on *infective computations* [2]_ read the docstring of
 :py:meth:`JacobianPoint.scalar_multiplication_infective`.
 
 .. note::
-  functions, classes and methods prefixed with _ are designed to remain
-  private to this module, there are not intended to be called from external
-  client code.
+  functions, classes and methods prefixed with _ in the source code are private
+  to this module, there are not intended to be called from external client code.
 """
 
 import copy
@@ -295,14 +294,14 @@ class _CoZArithmetic:
 class JacobianPoint:
     """
     Point representation in Jacobian coordinates. It uses Co-Z arithmetic
-    [ref1]_ to compute operations between curve points.
+    [1]_ to compute operations between curve points.
     """
     def __init__(self, x, y, z, curve):
         """
-        x, y, z are the Jacobian coordinates of this point, curve is the
-        underlying/associated curve. curve must be a valid curve, it is the
-        responsability of the caller to provide a valid and secure curve. curve
-        is likely an instance of :py:class:`_Curve`.
+        :py:attr:`x`, :py:attr:`y`, :py:attr:`z` are the Jacobian coordinates of
+        this point, curve is the underlying/associated curve. curve must be a
+        valid curve, it is the responsability of the caller to provide a valid
+        and secure curve. curve is likely an instance of :py:class:`_Curve`.
         """
         _check_integer_type(x)
         _check_integer_type(y)
@@ -385,7 +384,7 @@ class JacobianPoint:
 
     def get_affine_y(self):
         """
-        Returns the affine coordinate :py:attr:`x` of this point.
+        Returns the affine coordinate :py:attr:`y` of this point.
         """
         return self.to_affine[1]
 
@@ -393,6 +392,7 @@ class JacobianPoint:
         """
         Return the compression bit odd(:py:attr:`y`) associated to the
         :py:attr:`y` coordinate. Does not work for the point at infinity.
+        See example in :py:meth:`uncompress`.
         """
         assert not self.is_at_infinity()
         self.normalize()
@@ -401,10 +401,17 @@ class JacobianPoint:
     @staticmethod
     def uncompress(x, bit_y, curve):
         """
-        Uncompress and return the point represented by :py:attr:`x` and
-        :py:attr:`bit_y`. See :py:meth:`compression_bit_y` for how
+        Uncompress and construct the Jacobian point represented by :py:attr:`x`
+        and :py:attr:`bit_y`. See :py:meth:`compression_bit_y` for how
         :py:attr:`bit_y` was initially obtained. curve's order must be a
         congruent of 3 mod 4.
+
+        Example::
+
+           curve = wcurve.secp256r1_curve()
+           bit_y = curve.base_point.compression_bit_y()
+           # p is a copy of the base point curve.base_point
+           p = wcurve.JacobianPoint.uncompress(curve.base_point.x, bit_y, curve)
         """
         _check_integer_type(x)
         assert bit_y in (0, 1)
@@ -464,7 +471,7 @@ class JacobianPoint:
         """
         Returns ``True`` if this point is valid.
 
-        It checks that this point ``P``:
+        It checks that this point ``P`` meets the following requirements:
 
         1. ``P != O``
         2. ``P`` is on curve
@@ -480,13 +487,13 @@ class JacobianPoint:
 
     def __add__(self, point):
         """
-        Adds this point with another point and returns the result.
+        Adds up together this point with another point and returns the result.
 
         Very inefficient algorithm when used for double scalar multiplication,
         the only upside in this case is that it is formed of regular operations.
         Additions with identity points are handled as special cases.
 
-        Usually points are publics elements (at least in the algorithms I know)
+        Usually points are public elements (at least in the algorithms I know)
         therefore we're being slightly less careful in how we are manipulating
         and comparing them.
         """
@@ -532,12 +539,13 @@ class JacobianPoint:
         This method does the scalar multiplication of the submitted scalar with
         the current point. The scalar value is used as is, it is not randomized,
         it is not reduced mod n. Before the computation this point is validated
-        through is_valid() and at the end the final result is verified to be a
-        point on the curve. If any validation step fails a ValueError exception
-        is immediately raised. The result is only guaranteed to be a point on
-        the curve, which of course doesn't ensure it is correct.
+        through :py:meth:`is_valid` and at the end the final result must verify
+        :py:meth:`is_on_curve`. If any validation step fails, a ``ValueError``
+        exception is immediately raised. The result is only guaranteed to be a
+        point on the curve, which of course doesn't ensure the computations were
+        correct.
 
-        There is nothing that prevent the use of first twos *Coron*'s DPA
+        There is nothing that prevent the use of first two *Coron*'s DPA
         countermeasures (prior to the call of this method).
 
         **Restrictions**: ``scalar * infinity`` is not permitted.
@@ -580,7 +588,7 @@ class JacobianPoint:
         if an error is introduced in any part of the computation.
 
         This implementation follows the Algorithm 8 presented at section 4 of
-        [ref2]_ by  *Blomer and al.* ans it also uses *infective computations*
+        [2]_ by  *Blomer and al.* and it also uses *infective computations*
         as presented by the modified version of this algorithm at the end of
         section 4.1.
 
@@ -588,8 +596,8 @@ class JacobianPoint:
         example. Also read comments in :py:meth:`scalar_multiplication` it mostly
         applies to this method as well.
         """
-        # Sign Change Fault Attacks On Elliptic Curve Cryptosystems by Blomer,
-        # Otto and Seifert.
+        # [2] Sign Change Fault Attacks On Elliptic Curve Cryptosystems by
+        #     Blomer, Otto and Seifert.
         if (not hasattr(self.curve, 'small_curve') or
             not hasattr(self.curve, 'big_curve')):
             raise TypeError("Invalid curve.")
@@ -632,12 +640,22 @@ class JacobianPoint:
 
     def __mul__(self, scalar):
         """
-        Returns ``scalar * self`` with self as curve point.
+        Returns ``scalar * self`` with ``self`` representing this point.
 
         The choice of the underlying scalar multiplication algorithm will
         depend on the instantiated curve type. If the curve supports infective
         computations it will call :py:meth:`scalar_multiplication_infective`
         otherwise it will call :py:meth:`scalar_multiplication`.
+
+        Example::
+
+               curve = wcurve.secp256r1_curve()
+               # Will internally call scalar_multiplication()
+               p = 42 * curve.base_point
+
+               curve = wcurve.secp256r1_curve_infective()
+               # Will internally call scalar_multiplication_infective()
+               p = 42 * curve.base_point
         """
         if self.curve.infective:
             return self.scalar_multiplication_infective(scalar)
@@ -657,7 +675,7 @@ class JacobianPoint:
     def __eq__(self, point):
         """
         Returns ``True`` when the two points are equals. The compared points
-        could have to be modified in-place in order to obtain an equivalent
+        might have to be modified in-place in order to obtain an equivalent
         representation facilitating their comparison.
         """
         if not isinstance(point, JacobianPoint):
@@ -687,11 +705,11 @@ class _Curve:
         y\ :sup:`2` = x\ :sup:`3` + a.x.z\ :sup:`4` + b.z\ :sup:`6` over
         prime field Fp.
 
-        The base point is represented by the triplet ``(gx, gy, gz)``. n is the
-        base point's order and h is its cofactor h.
+        The base point is represented by the triplet ``(gx, gy, gz)``,
+        :py:attr:`n` is the base point's order and :py:attr:`h` is its cofactor.
 
         Once instantiated a :py:class:`_Curve` object exposes these parameters
-        as attributes with the same name.
+        as attributes under the same name.
 
         This class is actually marked as private because there is currently no
         method implemented for asserting the validity of a curve. Therefore
@@ -699,7 +717,7 @@ class _Curve:
         this class without validating its parameters. That's the reason why
         there are factory functions such as :py:func:`secp256r1_curve` whose
         the purpose is to it automatically build and return a standardized curve
-        from vlidated parameters. Also it is important to not accept
+        from validated parameters. Also it is important to not accept
         parameters/curves settings from third parties without validating them.
         The prefered way is instead to always use your own parameters and
         inform the remote party of your choices.
@@ -720,14 +738,14 @@ class _Curve:
 
 def secp256r1_curve():
     """
-    Factory function returning a secp256r1 curve (as documented in `this PDF
+    Factory function returning a secp256r1 curve (as defined in `this PDF
     file <http://www.secg.org/download/aid-784/sec2-v2.pdf>`_). This
     :py:class:`_Curve` object can be manipulated as a singleton and can be
     reused with different points.
 
     It also provide useful attributes::
 
-       curve  = wcurve.secp256r1_curve()
+       curve = wcurve.secp256r1_curve()
        # Base point (instance of JacobianPoint)
        curve.base_point
        # Base point's order
@@ -791,9 +809,9 @@ def _p256r1_p112r1_curve():
 
 def secp256r1_curve_infective():
     """
-    This curve uses auxiliary curves to ensure scalar multiplication result
-    is either mathematically correct or otherwise return a wrong result unable
-    to provide no useful information to an attacker [ref2]_.
+    This curve uses auxiliary curves to ensure scalar multiplication's result
+    is either mathematically correct or otherwise returning a wrong result
+    not disclosing no useful information [2]_.
 
     As scalar multiplication algorithm it will use
     :py:meth:`JacobianPoint.scalar_multiplication_infective`.
@@ -812,8 +830,7 @@ def secp256r1_curve_infective():
 
     The object instantiated and returned is a :py:class:`_Curve` object which
     can be manipulated as a singleton and be reused with different points. It
-    also provide useful attributes (see example in :py:func:`secp256r1_curve`'s
-    docstring).
+    also provide useful attributes, see docstring of :py:func:`secp256r1_curve`.
     """
     p256r1 = secp256r1_curve()
     p256r1.set_infective()

@@ -1,11 +1,11 @@
-= WCURVE =
+= wcurve =
 
 Project URL: http://github.com/seb-m/wcurve
 Dependencies: Python >= 2.4
 License: MIT
 
 
-= DESCRIPTION =
+= Description =
 
 This package implements basic arithmetic operations such as point addition and
 single-scalar multiplication on elliptic curves in short Weiertsrass form.
@@ -24,6 +24,11 @@ Example:
 See directly wcurve.py for a more detailed description.
 
 
-= INSTALL =
+= Install =
 
  $ sudo python setup.py install
+
+
+= Build Documentation =
+
+ $ cd doc/ && make html

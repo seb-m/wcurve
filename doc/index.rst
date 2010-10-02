@@ -33,5 +33,5 @@ Class JacobianPoint
 References
 -----------
 
-.. [ref1] Co-Z Addition Formulae and Binary Ladders on Elliptic Curves by *Raveen R. Goundar and Marc Joye and Atsuko Miyaji*.
-.. [ref2] Sign Change Fault Attacks On Elliptic Curve Cryptosystems by *Blomer, Otto and Seifert*.
+.. [1] Co-Z Addition Formulae and Binary Ladders on Elliptic Curves by *Raveen R. Goundar and Marc Joye and Atsuko Miyaji*.
+.. [2] Sign Change Fault Attacks On Elliptic Curve Cryptosystems by *Blomer, Otto and Seifert*.
