@@ -379,8 +379,8 @@ class JacobianPoint:
     @staticmethod
     def from_affine(x, y, curve):
         """
-        Return new JacobianPoint from affine coordinates ``x, y``, ``curve`` is
-        an instance of :py:class:`_Curve`, see :py:meth:`__init__` for more
+        Returns a new JacobianPoint from affine coordinates ``x, y``, ``curve``
+        is an instance of :py:class:`_Curve`, see :py:meth:`__init__` for more
         details.
         """
         return JacobianPoint(x, y, 1, curve)

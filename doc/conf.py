@@ -215,12 +215,12 @@ man_pages = [
      [u'Sebastien Martini'], 1)
 ]
 
-autoclass_content = "both"
+#autoclass_content = "both"
 #autodoc_member_order = "bysource"
 #autodoc_default_flags = "members"
 
 def maybe_skip_member(app, what, name, obj, skip, options):
-    if name in ('__add__', '__mul__', '__eq__', '__neg__'):
+    if name in ('__add__', '__mul__', '__eq__', '__neg__', '__init__'):
         return False
     return skip
 
