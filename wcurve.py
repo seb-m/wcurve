@@ -376,6 +376,15 @@ class JacobianPoint:
         self.normalize()
         return self.x, self.y
 
+    @staticmethod
+    def from_affine(x, y, curve):
+        """
+        Return new JacobianPoint from affine coordinates ``x, y``, ``curve`` is
+        an instance of :py:class:`_Curve`, see :py:meth:`__init__` for more
+        details.
+        """
+        return JacobianPoint(x, y, 1, curve)
+
     def get_affine_x(self):
         """
         Returns the affine coordinate :py:attr:`x` of this point.
@@ -426,7 +435,7 @@ class JacobianPoint:
             assert y != 0
             y = -y % curve.p
         assert (y & 1) == bit_y
-        return JacobianPoint(x, y, 1, curve)
+        return JacobianPoint.from_affine(x, y, curve)
 
     def is_at_infinity(self):
         """
@@ -666,7 +675,7 @@ class JacobianPoint:
 
     def __neg__(self):
         """
-        Returns the point (x, -y, z) or an unmodified copy if the point is
+        Returns the point ``(x, -y, z)`` or an unmodified copy if the point is
         the point at infinity.
         """
         copy = self.__copy__()
@@ -702,13 +711,13 @@ class JacobianPoint:
 
 
 class _Curve:
-    def __init__(self, a, b, p, gx, gy, gz, n, h):
+    def __init__(self, a, b, p, gx, gy, n, h):
         """
         Used to represent a Weierstrass curve
         y\ :sup:`2` = x\ :sup:`3` + a.x.z\ :sup:`4` + b.z\ :sup:`6` over
         prime field Fp.
 
-        The base point is represented by the triplet ``(gx, gy, gz)``,
+        The base point is represented by affine coordinates ``(gx, gy)``,
         :py:attr:`n` is the base point's order and :py:attr:`h` is its cofactor.
 
         Once instantiated a :py:class:`_Curve` object exposes these parameters
@@ -729,7 +738,7 @@ class _Curve:
         self.b = b
         self.p = p
         self.point_at_infinity = JacobianPoint(1, 1, 0, self)
-        self.base_point = JacobianPoint(gx, gy, gz, self)
+        self.base_point = JacobianPoint.from_affine(gx, gy, self)
         # Fixme: implement an order() method in JacobianPoint class?
         self.n = n  # order(base_point)
         self.h = h  # cofactor
@@ -769,12 +778,11 @@ def secp256r1_curve():
     # Base point G
     gx = 48439561293906451759052585252797914202762949526041747995844080717082404635286
     gy = 36134250956749795798585127919587881956611106672985015071877198253568414405109
-    gz = 1
     # order(G)
     n = 115792089210356248762697446949407573529996955224135760342422259061068512044369
     # cofactor
     h = 1
-    return _Curve(a, b, p, gx, gy, gz, n, h)
+    return _Curve(a, b, p, gx, gy, n, h)
 
 def _secp112r1_curve():
     """
@@ -788,12 +796,11 @@ def _secp112r1_curve():
     # Base point G
     gx = 188281465057972534892223778713752
     gy = 3419875491033170827167861896082688
-    gz = 1
     # order(G)
     n = 4451685225093714776491891542548933
     # cofactor
     h = 1
-    return _Curve(a, b, p, gx, gy, gz, n, h)
+    return _Curve(a, b, p, gx, gy, n, h)
 
 def _p256r1_p112r1_curve():
     """
@@ -804,11 +811,10 @@ def _p256r1_p112r1_curve():
     b = 484889491320735356329226626040208483611546569865294753617259762389829050609800549988015429153790970160257840085
     gx = 69387807193038620347826017107789675363942498000472348441314647750703812303234318768266908719566927173922489149
     gy = 449940845877401129805638119773664617939857118052151782212917166954513344116745329959639883494500827822653780385
-    gz = 1
     # Not used
     n = 0
     h = 0
-    return _Curve(a, b, p, gx, gy, gz, n, h)
+    return _Curve(a, b, p, gx, gy, n, h)
 
 def secp256r1_curve_infective():
     """
