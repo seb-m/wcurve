@@ -7,13 +7,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
-    <title>wcurve &mdash; wcurve v0.0.9 documentation</title>
+    <title>wcurve &mdash; wcurve v0.1.0 documentation</title>
     <link rel="stylesheet" href="static/default.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.0.9',
+        VERSION:     '0.1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,13 +22,13 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="wcurve v0.0.9 documentation" href="#" />
+    <link rel="top" title="wcurve v0.1.0 documentation" href="#" />
   </head>
   <body>
     <div class="related">
       <h3>Navigation</h3>
       <ul>
-        <li><a href="#">wcurve v0.0.9 documentation</a> &raquo;</li>
+        <li><a href="#">wcurve v0.1.0 documentation</a> &raquo;</li>
       </ul>
     </div>
 
@@ -138,25 +138,8 @@ also provide useful attributes, see docstring of <a class="reference internal" h
 
 <dl class="class">
 <dt id="wcurve._Curve">
-<em class="property">class </em><tt class="descclassname">wcurve.</tt><tt class="descname">_Curve</tt><big>(</big><em>a</em>, <em>b</em>, <em>p</em>, <em>gx</em>, <em>gy</em>, <em>gz</em>, <em>n</em>, <em>h</em><big>)</big><a class="headerlink" href="#wcurve._Curve" title="Permalink to this definition">¶</a></dt>
-<dd><p>Used to represent a Weierstrass curve
-y<sup>2</sup> = x<sup>3</sup> + a.x.z<sup>4</sup> + b.z<sup>6</sup> over
-prime field Fp.</p>
-<p>The base point is represented by the triplet <tt class="docutils literal"><span class="pre">(gx,</span> <span class="pre">gy,</span> <span class="pre">gz)</span></tt>,
-<tt class="xref py py-attr docutils literal"><span class="pre">n</span></tt> is the base point&#8217;s order and <tt class="xref py py-attr docutils literal"><span class="pre">h</span></tt> is its cofactor.</p>
-<p>Once instantiated a <a class="reference internal" href="#wcurve._Curve" title="wcurve._Curve"><tt class="xref py py-class docutils literal"><span class="pre">_Curve</span></tt></a> object exposes these parameters
-as attributes under the same name.</p>
-<p>This class is actually marked as private because there is currently no
-method implemented for asserting the validity of a curve. Therefore
-it is extremely important to avoid constructing a new curve by calling
-this class without validating its parameters. That&#8217;s the reason why
-there are factory functions such as <a class="reference internal" href="#wcurve.secp256r1_curve" title="wcurve.secp256r1_curve"><tt class="xref py py-func docutils literal"><span class="pre">secp256r1_curve()</span></tt></a> whose
-the purpose is to it automatically build and return a standardized curve
-from validated parameters. Also it is important to not accept
-parameters/curves settings from third parties without validating them.
-The prefered way is instead to always use your own parameters and
-inform the remote party of your choices.</p>
-</dd></dl>
+<em class="property">class </em><tt class="descclassname">wcurve.</tt><tt class="descname">_Curve</tt><big>(</big><em>a</em>, <em>b</em>, <em>p</em>, <em>gx</em>, <em>gy</em>, <em>n</em>, <em>h</em><big>)</big><a class="headerlink" href="#wcurve._Curve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </div>
 <div class="section" id="class-jacobianpoint">
@@ -166,10 +149,6 @@ inform the remote party of your choices.</p>
 <em class="property">class </em><tt class="descclassname">wcurve.</tt><tt class="descname">JacobianPoint</tt><big>(</big><em>x</em>, <em>y</em>, <em>z</em>, <em>curve</em><big>)</big><a class="headerlink" href="#wcurve.JacobianPoint" title="Permalink to this definition">¶</a></dt>
 <dd><p>Point representation in Jacobian coordinates. It uses Co-Z arithmetic
 <a class="footnote-reference" href="#id5" id="id3">[1]</a> to compute operations between curve points.</p>
-<p><tt class="xref py py-attr docutils literal"><span class="pre">x</span></tt>, <tt class="xref py py-attr docutils literal"><span class="pre">y</span></tt>, <tt class="xref py py-attr docutils literal"><span class="pre">z</span></tt> are the Jacobian coordinates of
-this point, curve is the underlying/associated curve. curve must be a
-valid curve, it is the responsability of the caller to provide a valid
-and secure curve. curve is likely an instance of <a class="reference internal" href="#wcurve._Curve" title="wcurve._Curve"><tt class="xref py py-class docutils literal"><span class="pre">_Curve</span></tt></a>.</p>
 <dl class="method">
 <dt id="wcurve.JacobianPoint.__add__">
 <tt class="descname">__add__</tt><big>(</big><em>point</em><big>)</big><a class="headerlink" href="#wcurve.JacobianPoint.__add__" title="Permalink to this definition">¶</a></dt>
@@ -188,6 +167,15 @@ and comparing them.</p>
 <dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> when the two points are equals. The compared points
 might have to be modified in-place in order to obtain an equivalent
 representation facilitating their comparison.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="wcurve.JacobianPoint.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>x</em>, <em>y</em>, <em>z</em>, <em>curve</em><big>)</big><a class="headerlink" href="#wcurve.JacobianPoint.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="xref py py-attr docutils literal"><span class="pre">x</span></tt>, <tt class="xref py py-attr docutils literal"><span class="pre">y</span></tt>, <tt class="xref py py-attr docutils literal"><span class="pre">z</span></tt> are the Jacobian coordinates of
+this point, curve is the underlying/associated curve. curve must be a
+valid curve, it is the responsability of the caller to provide a valid
+and secure curve. curve is likely an instance of <a class="reference internal" href="#wcurve._Curve" title="wcurve._Curve"><tt class="xref py py-class docutils literal"><span class="pre">_Curve</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -213,7 +201,8 @@ otherwise it will call <a class="reference internal" href="#wcurve.JacobianPoint
 <dl class="method">
 <dt id="wcurve.JacobianPoint.__neg__">
 <tt class="descname">__neg__</tt><big>(</big><big>)</big><a class="headerlink" href="#wcurve.JacobianPoint.__neg__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the point (x, -y, z).</p>
+<dd><p>Returns the point <tt class="docutils literal"><span class="pre">(x,</span> <span class="pre">-y,</span> <span class="pre">z)</span></tt> or an unmodified copy if the point is
+the point at infinity.</p>
 </dd></dl>
 
 <dl class="method">
@@ -222,6 +211,14 @@ otherwise it will call <a class="reference internal" href="#wcurve.JacobianPoint
 <dd><p>Return the compression bit odd(<tt class="xref py py-attr docutils literal"><span class="pre">y</span></tt>) associated to the
 <tt class="xref py py-attr docutils literal"><span class="pre">y</span></tt> coordinate. Does not work for the point at infinity.
 See example in <a class="reference internal" href="#wcurve.JacobianPoint.uncompress" title="wcurve.JacobianPoint.uncompress"><tt class="xref py py-meth docutils literal"><span class="pre">uncompress()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="wcurve.JacobianPoint.from_affine">
+<em class="property">static </em><tt class="descname">from_affine</tt><big>(</big><em>x</em>, <em>y</em>, <em>curve</em><big>)</big><a class="headerlink" href="#wcurve.JacobianPoint.from_affine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a new JacobianPoint from affine coordinates <tt class="docutils literal"><span class="pre">x,</span> <span class="pre">y</span></tt>, <tt class="docutils literal"><span class="pre">curve</span></tt>
+is an instance of <a class="reference internal" href="#wcurve._Curve" title="wcurve._Curve"><tt class="xref py py-class docutils literal"><span class="pre">_Curve</span></tt></a>, see <a class="reference internal" href="#wcurve.JacobianPoint.__init__" title="wcurve.JacobianPoint.__init__"><tt class="xref py py-meth docutils literal"><span class="pre">__init__()</span></tt></a> for more
+details.</p>
 </dd></dl>
 
 <dl class="method">
@@ -396,7 +393,7 @@ congruent of 3 mod 4.</p>
     <div class="related">
       <h3>Navigation</h3>
       <ul>
-        <li><a href="#">wcurve v0.0.9 documentation</a> &raquo;</li>
+        <li><a href="#">wcurve v0.1.0 documentation</a> &raquo;</li>
       </ul>
     </div>
     <div class="footer">
