@@ -666,9 +666,12 @@ class JacobianPoint:
 
     def __neg__(self):
         """
-        Returns the point (x, -y, z).
+        Returns the point (x, -y, z) or an unmodified copy if the point is
+        the point at infinity.
         """
         copy = self.__copy__()
+        if self.is_at_infinity():
+            return copy
         copy.y = -copy.y % self.curve.p
         return copy
 
