@@ -32,6 +32,15 @@ class TestWCurveArithmetic(unittest.TestCase):
         r = self.curve.point_at_infinity - self.curve.base_point
         self.assertEqual(r, -self.curve.base_point)
 
+    def testNeg(self):
+        r = -self.curve.base_point
+        bp = copy.copy(self.curve.base_point)
+        bp.y = -bp.y % self.curve.p
+        self.assertEqual(r, bp)
+        self.assertEqual(-r, self.curve.base_point)
+        r = -self.curve.point_at_infinity
+        self.assertEqual(r, self.curve.point_at_infinity)
+
     def testAdd(self):
         r = self.curve.base_point + self.curve.point_at_infinity
         self.assertEqual(r, self.curve.base_point)
