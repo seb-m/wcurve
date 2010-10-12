@@ -27,7 +27,7 @@ classif = [
 
 setup(
     name='wcurve',
-    version='0.1.0',
+    version='0.1.1',
     description=('wcurve implements basic arithmetic operations on elliptic'
                  ' curves in short Weiertsrass form.'),
     author='Sebastien Martini',
@@ -35,6 +35,6 @@ setup(
     license='MIT License',
     classifiers=classif,
     url='http://github.com/seb-m/wcurve',
-    download_url='http://github.com/seb-m/wcurve/tarball/0.1.0',
+    download_url='http://github.com/seb-m/wcurve/tarball/0.1.1',
     py_modules=['wcurve'],
     )
