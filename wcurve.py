@@ -59,7 +59,7 @@ on *infective computations* [2]_ read the docstring of
 :py:meth:`JacobianPoint.scalar_multiplication_infective`.
 
 .. note::
-  functions, classes and methods prefixed with _ in the source code are private
+  functions, classes and methods prefixed with _ in the source code are privates
   to this module, there are not intended to be called from external client code.
 """
 
@@ -331,8 +331,7 @@ class JacobianPoint:
         Compute (lmbda^2.x, lmbda^3.y, lmbda.z) in-place.
         """
         _check_integer_type(lmbda)
-        if lmbda % self.curve.p == 0:
-            return
+        assert not self.is_at_infinity()
         t1 = lmbda ** 2 % self.curve.p
         self.x = self.x * t1 % self.curve.p
         t1 = t1 * lmbda % self.curve.p
@@ -341,12 +340,12 @@ class JacobianPoint:
 
     def normalize(self):
         """
-        Transform this point to an equivalent representative taking 1 as z
-        coordinate in ``(x : y : 1)`` when the point is not at infinity and
-        taking x, y as 1 in ``(1 : 1 : 0)`` when the point is at infinity. This
-        method is used for faciliting points comparisons and to convert a point
-        to its affine representation. Before any transformation takes place this
-        method checks that the point is on the curve.
+        Transform this point to an equivalent and unique representative taking
+        1 as z coordinate in ``(x : y : 1)`` when the point is not at infinity
+        and taking x, y as 1 in ``(1 : 1 : 0)`` when the point is at infinity.
+        This method is used for faciliting points comparisons and to convert a
+        point to its affine representation. Before any transformation takes
+        place this method checks that the point is on the curve.
         """
         # The point must be a valid point on curve. Otherwise it would
         # modify this point to a non-equivalent representation.
@@ -442,9 +441,7 @@ class JacobianPoint:
         Returns ``True`` if this point is at infinity. This method is part of
         the validation done by :py:meth:`is_valid`.
         """
-        if self.z % self.curve.p == 0:
-            return True
-        return False
+        return self.z % self.curve.p == 0
 
     def has_valid_order(self):
         """
@@ -592,18 +589,18 @@ class JacobianPoint:
 
     def scalar_multiplication_infective(self, scalar):
         """
-        This scalar multiplication checks the correctness of the final result
-        but in an implicit way where a non-exploitable wrong result is returned
-        if an error is introduced in any part of the computation.
+        This scalar multiplication implicitly checks the correctness of its
+        result and uses *infective computations* to propagate an eventual
+        unexpected error and return in this case an harmless wrong result.
 
         This implementation follows the Algorithm 8 presented at section 4 of
         [2]_ by  *Blomer and al.* and it also uses *infective computations*
         as presented by the modified version of this algorithm at the end of
         section 4.1.
 
-        See function :py:func:`secp256r1_curve_infective` for more details and for an
-        example. Also read comments in :py:meth:`scalar_multiplication` it mostly
-        applies to this method as well.
+        See function :py:func:`secp256r1_curve_infective` for more details and
+        for an example. Also read comments in :py:meth:`scalar_multiplication`
+        it mostly applies to this method as well.
         """
         # [2] Sign Change Fault Attacks On Elliptic Curve Cryptosystems by
         #     Blomer, Otto and Seifert.
@@ -684,18 +681,28 @@ class JacobianPoint:
         copy.y = -copy.y % self.curve.p
         return copy
 
-    def __eq__(self, point):
+    def _eq_shallow(self, other):
+        """
+        Only compares points coordinates.
+        """
+        if not isinstance(other, JacobianPoint):
+            raise TypeError("Invalid type %s, expected type %s." % \
+                                (type(point), JacobianPoint))
+        self.normalize()
+        other.normalize()
+        return (self.x == other.x) & (self.y == other.y) & (self.z == other.z)
+
+    def __eq__(self, other):
         """
         Returns ``True`` when the two points are equals. The compared points
         might have to be modified in-place in order to obtain an equivalent
         representation facilitating their comparison.
         """
-        if not isinstance(point, JacobianPoint):
-            raise TypeError("Invalid type %s, expected type %s." % \
-                                (type(point), JacobianPoint))
-        self.normalize()
-        point.normalize()
-        return (self.x == point.x) & (self.y == point.y) & (self.z == point.z)
+        # Compares points coordinates.
+        r = self._eq_shallow(other)
+        # Compares underlying curves points.
+        r &= (id(self.curve) == id(other.curve)) or (self.curve == other.curve)
+        return r
 
     def __ne__(self, point):
         return not self.__eq__(point)
@@ -746,6 +753,19 @@ class _Curve:
 
     def set_infective(self):
         self.infective = True
+
+    def __eq__(self, other):
+        # Ignore infectivness since it doesn't modify the final computations
+        # results.
+        assert (id(self) == id(self.point_at_infinity.curve) and
+                id(self) == id(self.base_point.curve))
+        assert (id(other) == id(other.point_at_infinity.curve) and
+                id(other) == id(other.base_point.curve))
+        r = ((self.a == other.a) & (self.b == other.b) & (self.p == other.p) &
+             (self.n == other.n) & (self.h == other.h))
+        r &= self.point_at_infinity._eq_shallow(other.point_at_infinity)
+        r &= self.base_point._eq_shallow(other.base_point)
+        return r
 
 
 def secp256r1_curve():

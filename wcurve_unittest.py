@@ -16,11 +16,15 @@ class TestWCurveArithmetic(unittest.TestCase):
         self.assertEqual(self.curve.base_point, self.curve.base_point)
         self.assertEqual(self.curve.point_at_infinity, self.curve.point_at_infinity)
         self.assertEqual(self.curve.point_at_infinity, -self.curve.point_at_infinity)
-        inf = copy.copy(self.curve.point_at_infinity)
-        inf._to_equivalent(10)
-        self.assertEqual(self.curve.point_at_infinity, inf)
         self.assertFalse(self.curve.base_point == self.curve.point_at_infinity)
         self.assertTrue(self.curve.base_point != self.curve.point_at_infinity)
+        curve2 = wcurve.secp256r1_curve()
+        self.assertEqual(self.curve, self.curve)
+        self.assertEqual(self.curve, curve2)
+        self.assertEqual(self.curve.base_point, curve2.base_point)
+        curve2.n = 42
+        self.assertNotEqual(self.curve, curve2)
+        self.assertNotEqual(self.curve.base_point, curve2.base_point)
 
     def testSub(self):
         r = self.curve.base_point - self.curve.base_point
