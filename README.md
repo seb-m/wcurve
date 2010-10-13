@@ -1,17 +1,19 @@
-= wcurve =
+# wcurve
 
-Project URL   : http://github.com/seb-m/wcurve
-Documentation : http://seb-m.github.com/wcurve
-Dependencies  : Python >= 2.4
-License       : MIT
+* Project URL   : http://github.com/seb-m/wcurve
+* Documentation : http://seb-m.github.com/wcurve
+* Dependencies  : Python >= 2.4
+* License       : MIT
 
 
-= Description =
+## Description
 
 This package implements basic arithmetic operations such as point addition and
 single-scalar multiplication on elliptic curves in short Weiertsrass form.
 
-Example:
+### Example:
+
+```python
     import wcurve, random
     # Instantiate secp256r1 standardized curve
     curve  = wcurve.secp256r1_curve()
@@ -21,13 +23,17 @@ Example:
     pk = sk * curve.base_point
     # Get its affine coordinates
     pkx, pky = pk.to_affine()
+```
 
 
-= Install =
+## Install
 
+```bash
  $ sudo python setup.py install
+```
 
+## Build Documentation
 
-= Build Documentation =
-
+```bash
  $ cd doc/ && make html
+```
