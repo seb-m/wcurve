@@ -1,7 +1,7 @@
 # wcurve
 
-* Project URL   : (http://github.com/seb-m/wcurve)[http://github.com/seb-m/wcurve]
-* Documentation : (http://seb-m.github.com/wcurve)[http://seb-m.github.com/wcurve]
+* Project URL   : [http://github.com/seb-m/wcurve](http://github.com/seb-m/wcurve)
+* Documentation : [http://seb-m.github.com/wcurve](http://seb-m.github.com/wcurve)
 * Dependencies  : Python >= 2.4
 * License       : MIT
 
@@ -26,7 +26,7 @@ single-scalar multiplication on elliptic curves in short Weiertsrass form.
 
 ## Install
 
- $ sudo python setup.py install
+    $ sudo python setup.py install
 
 
 ## Build Documentation
@@ -34,4 +34,4 @@ single-scalar multiplication on elliptic curves in short Weiertsrass form.
 The current documentation is built with Sphynx, just use this command to
 generate it:
 
- $ cd doc/ && make html
+    $ cd doc/ && make html
