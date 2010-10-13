@@ -1,7 +1,7 @@
 # wcurve
 
-* Project URL   : [[http://github.com/seb-m/wcurve]]
-* Documentation : [[http://seb-m.github.com/wcurve]]
+* Project URL   : (http://github.com/seb-m/wcurve)[http://github.com/seb-m/wcurve]
+* Documentation : (http://seb-m.github.com/wcurve)[http://seb-m.github.com/wcurve]
 * Dependencies  : Python >= 2.4
 * License       : MIT
 
@@ -13,7 +13,6 @@ single-scalar multiplication on elliptic curves in short Weiertsrass form.
 
 ### Example
 
-```python
     import wcurve, random
     # Instantiate secp256r1 standardized curve
     curve  = wcurve.secp256r1_curve()
@@ -23,17 +22,16 @@ single-scalar multiplication on elliptic curves in short Weiertsrass form.
     pk = sk * curve.base_point
     # Get its affine coordinates
     pkx, pky = pk.to_affine()
-```
 
 
 ## Install
 
-```sh
  $ sudo python setup.py install
-```
+
 
 ## Build Documentation
 
-```sh
+The current documentation is built with Sphynx, just use this command to
+generate it:
+
  $ cd doc/ && make html
-```
