@@ -1,7 +1,7 @@
 # wcurve
 
-* Project URL   : http://github.com/seb-m/wcurve
-* Documentation : http://seb-m.github.com/wcurve
+* Project URL   : [[http://github.com/seb-m/wcurve]]
+* Documentation : [[http://seb-m.github.com/wcurve]]
 * Dependencies  : Python >= 2.4
 * License       : MIT
 
@@ -11,7 +11,7 @@
 This package implements basic arithmetic operations such as point addition and
 single-scalar multiplication on elliptic curves in short Weiertsrass form.
 
-### Example:
+### Example
 
 ```python
     import wcurve, random
@@ -28,12 +28,12 @@ single-scalar multiplication on elliptic curves in short Weiertsrass form.
 
 ## Install
 
-```bash
+```sh
  $ sudo python setup.py install
 ```
 
 ## Build Documentation
 
-```bash
+```sh
  $ cd doc/ && make html
 ```
