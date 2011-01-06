@@ -18,7 +18,7 @@ def _big_int_unpack_be(seq):
 def generate_keypair(curve):
     sk = random.SystemRandom().randint(1, curve.n - 1)
     pk = sk * curve.base_point
-    pk.normalize()
+    pk.canonicalize()
     return sk, pk
 
 def sign(secret_key, msg):
