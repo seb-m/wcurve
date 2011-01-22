@@ -250,7 +250,7 @@ class _CoZArithmetic:
         (2P,P) = DBLU(P)
         """
         assert p.z % self.curve.p == 1
-        t1 = p.x; t2 = p.y; t3 = p.z;
+        t1 = p.x; t2 = p.y;
         t4 = t1 ** 2 % self.curve.p  # b
         t5 = 3 * t4
         t5 = t5 + self.curve.a  # m
@@ -675,11 +675,11 @@ class JacobianPoint:
         Returns the point ``(x, -y, z)`` or an unmodified copy if the point is
         the point at infinity.
         """
-        copy = self.__copy__()
+        cpy = self.__copy__()
         if self.is_at_infinity():
-            return copy
-        copy.y = -copy.y % self.curve.p
-        return copy
+            return cpy
+        cpy.y = -cpy.y % self.curve.p
+        return cpy
 
     def _eq_shallow(self, other):
         """
@@ -687,7 +687,7 @@ class JacobianPoint:
         """
         if not isinstance(other, JacobianPoint):
             raise TypeError("Invalid type %s, expected type %s." % \
-                                (type(point), JacobianPoint))
+                                (type(other), JacobianPoint))
         self.canonicalize()
         other.canonicalize()
         return (self.x == other.x) & (self.y == other.y) & (self.z == other.z)
