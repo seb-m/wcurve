@@ -2,7 +2,7 @@
 
 * Project URL   : [http://github.com/seb-m/wcurve](http://github.com/seb-m/wcurve)
 * Documentation : [http://seb-m.github.com/wcurve](http://seb-m.github.com/wcurve)
-* Dependencies  : Python >= 2.4
+* Dependencies  : Python ≥ 2.4
 * License       : MIT
 
 
@@ -26,7 +26,10 @@ single-scalar multiplication on elliptic curves in short Weiertsrass form.
 
 ## Install
 
+    # From tarball
     $ sudo python setup.py install
+    # Or with setuptools
+    $ sudo easy_install wcurve
 
 
 ## Build Documentation
