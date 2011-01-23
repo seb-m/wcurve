@@ -1,6 +1,6 @@
 # wcurve.py - basic arithmetic on elliptic curves in short Weiertsrass form.
 #
-# Copyright (c) 2010 Sebastien Martini <seb@dbzteam.org>
+# Copyright (c) 2010-2011 Sebastien Martini <seb@dbzteam.org>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -67,7 +67,7 @@ import random
 
 __author__ = "Sebastien Martini (seb@dbzteam.org)"
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 def _check_integer_type(val):
     """
