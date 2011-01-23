@@ -388,13 +388,13 @@ class JacobianPoint:
         """
         Returns the affine coordinate :py:attr:`x` of this point.
         """
-        return self.to_affine[0]
+        return self.to_affine()[0]
 
     def get_affine_y(self):
         """
         Returns the affine coordinate :py:attr:`y` of this point.
         """
-        return self.to_affine[1]
+        return self.to_affine()[1]
 
     def compression_bit_y(self):
         """
