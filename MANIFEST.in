@@ -2,5 +2,5 @@ include COPYING
 include MANIFEST.in
 include README.md
 include *.py
-recursive-include examples *.py
+recursive-include examples *.py *.sh
 recursive-include doc *
