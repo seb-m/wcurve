@@ -8,43 +8,51 @@ import copy
 import math
 import os
 import random
-import subprocess
 import sys
-# Local imports
-import wcurve
+
+try:
+    import wcurve
+except:  # lazy trick for py3k
+    from os.path import abspath, dirname
+    parent = dirname(dirname(abspath(__file__)))
+    sys.path.append(parent)
+    import wcurve
+
+try:
+    import ecref
+except:
+    ecref = None
+
 
 if sys.version_info < (3, 0):
-    def _big_int_unpack_be(seq):
-        return sum([ord(b) << ((len(seq) - 1 - i) << 3) for i, b in enumerate(seq)])
+    _ord = lambda x: ord(x)
+    _chr = lambda x: chr(x)
+    _join = ''.join
 
-    def _big_int_pack_be(n):
-        nl = int(math.ceil(float(wcurve._bit_length(n)) / 8))
-        return ''.join([chr((n >> (i * 8)) & 0xff) for i in range(nl - 1,
-                                                                  -1, -1)])
     def _be_unhex(s):
         return _big_int_unpack_be(binascii.unhexlify('0' * (len(s) % 2) + s))
 
-else:
-    def _big_int_unpack_be(byte_seq):
-        r = 0
-        i = len(byte_seq) - 1
-        for c in byte_seq:
-            r += c << (i * 8)
-            i -= 1
-        return r
+    def _be_hex(n):
+        return binascii.hexlify(_big_int_pack_be(n))
 
-    def _big_int_pack_be(n):
-        nl = math.ceil(n.bit_length() / 8)
-        return bytes((n >> (i * 8)) & 0xff for i in range(nl - 1, -1, -1))
+else:
+    _ord = _chr = lambda x: x
+    _join = bytes
 
     def _be_unhex(s):
         if isinstance(s, bytes):
             s = s.decode('ascii')
-        s = '0' * (len(s) % 2) + s
-        return _big_int_unpack_be(bytes.fromhex(s))
+        return _big_int_unpack_be(bytes.fromhex('0' * (len(s) % 2) + s))
 
-def _be_hex(n):
-    return binascii.hexlify(_big_int_pack_be(n))
+    def _be_hex(n):
+        return ''.join([('0' + hex(b)[2:])[-2:] for b in _big_int_pack_be(n)])
+
+def _big_int_unpack_be(seq):
+    return sum([_ord(b) << ((len(seq) - 1 - i) << 3) for i, b in enumerate(seq)])
+
+def _big_int_pack_be(n):
+    nl = int(math.ceil(float(wcurve._bit_length(n)) / 8))
+    return _join([_chr((n >> (i * 8)) & 0xff) for i in range(nl - 1, -1, -1)])
 
 def _rand_point(curve):
     while True:
@@ -52,19 +60,6 @@ def _rand_point(curve):
         pt = wcurve.JacobianPoint.uncompress(x, 0, curve)
         if pt.is_on_curve():
             return pt
-
-def _compile_ref(bin_path):
-    if os.path.exists(bin_path) or not os.path.exists(bin_path + '.c'):
-        return False
-    os.system('gcc -W -Wall -o %s %s.c -lcrypto' % (bin_path, bin_path))
-    return True
-
-def _run_cmd(cmd):
-    r = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    stdout, _ = r.communicate()
-    if r.returncode != 0:
-        return None
-    return stdout
 
 
 class TestWCurveArithmetic(unittest.TestCase):
@@ -162,33 +157,25 @@ class TestWCurveArithmetic(unittest.TestCase):
         self.assertEqual(p, -self.curve.base_point)
 
     def testScalarMulAgainstRef(self):
-        cmd = [self.bin_path, self.curve_name]
-        self.assertTrue(_compile_ref(self.bin_path))
-        try:
-            for i in range(10):
-                sa = random.SystemRandom().randint(1, self.curve.n - 1)
-                sb = random.SystemRandom().randint(1, self.curve.n - 1)
+        self.assertFalse(ecref is None)
+        for i in range(10):
+            sa = random.SystemRandom().randint(1, self.curve.n - 1)
+            sb = random.SystemRandom().randint(1, self.curve.n - 1)
 
-                a = _rand_point(self.curve)
-                b = _rand_point(self.curve)
-                ax, ay = a.to_affine()
-                bx, by = b.to_affine()
+            a = _rand_point(self.curve)
+            b = _rand_point(self.curve)
+            ax, ay = a.to_affine()
+            bx, by = b.to_affine()
 
-                stdout = _run_cmd(cmd + [_be_hex(sa), _be_hex(ax),
-                                         _be_hex(ay),
-                                         _be_hex(sb), _be_hex(bx),
-                                         _be_hex(by)])
-                self.assertTrue(stdout)
-                lines = stdout.splitlines()
-                self.assertEqual(len(lines), 2)
+            res = ecref.mul(self.curve_name,
+                            (_be_hex(sa), _be_hex(ax), _be_hex(ay)),
+                            (_be_hex(sb), _be_hex(bx), _be_hex(by)))
+            self.assertFalse(res is None)
 
-                r = wcurve.JacobianPoint.from_affine(_be_unhex(lines[0]),
-                                                     _be_unhex(lines[1]),
-                                                     self.curve)
-                rr = sa * a + sb * b
-                self.assertEqual(r, rr)
-        finally:
-            os.unlink(self.bin_path)
+            r = wcurve.JacobianPoint.from_affine(_be_unhex(res[0]),
+                                                 _be_unhex(res[1]), self.curve)
+            rr = sa * a + sb * b
+            self.assertEqual(r, rr)
 
     def testScalarMulInfective(self):
         sk = random.SystemRandom().randint(1, self.curve.n - 1)

@@ -32,6 +32,11 @@ single-scalar multiplication on elliptic curves in short Weiertsrass form.
     $ sudo easy_install wcurve
 
 
+## Run tests
+
+    $ make test
+
+
 ## Build Documentation
 
 The current documentation is built with Sphynx, just use this command to

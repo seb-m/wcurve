@@ -1,15 +1,15 @@
-EPYDOC=epydoc
-DSTDOC=docstrings
+PYTHON=python
 
-doc: clean-doc
-	$(EPYDOC) --html --graph=all -v -o $(DSTDOC) wcurve.py
+test:
+	cd tests; \
+	$(PYTHON) setup.py build; \
+	$(PYTHON) wcurve_unittest.py
 
-clean-doc:
-	rm -rf $(DSTDOC)
-
-clean: clean-doc
-	rm -rf dist
+clean:
+	rm -rf dist build tests/build MANIFEST
 	find . \( -name '*~' -or \
 		-name '*.pyc' -or \
-		-name '*.pyo' \) \
+		-name '*.pyo' -or \
+		-name '#*' -or \
+		-name '*.so' \) \
 		-print -exec rm {} \;

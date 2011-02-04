@@ -20,26 +20,25 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
   THE SOFTWARE.
 */
+
 // Used as reference implementation when testing wcurve. This implementation
 // is based on OpenSSL. See wcurve_unittest.py.
-//
-// $ gcc -W -Wall -o ec_ref ec_ref.c -lcrypto
-// $ ./ec_ref prime256v1 scalar x y [scalar x y]
-//
+
+#include <Python.h>
 #include <stdio.h>
 #include <openssl/bn.h>
 #include <openssl/ec.h>
 #include <openssl/err.h>
 #include <openssl/objects.h>
 
-
-static int run_ref(const char *curve_name, BIGNUM *args[], const int num) {
+static int run_ref(const char *curve_name, BIGNUM *bn[], const int ops,
+                   char **resx, char **resy) {
   EC_GROUP *group = NULL;
   EC_POINT *point_res = NULL;
-  EC_POINT *points[num];
-  const BIGNUM *scalars[num];
-  BIGNUM *res_x = NULL;
-  BIGNUM *res_y = NULL;
+  EC_POINT *points[ops];
+  const BIGNUM *scalars[ops];
+  BIGNUM *bn_x = NULL;
+  BIGNUM *bn_y = NULL;
   int ret = 0;
   int i = 0;
 
@@ -49,8 +48,8 @@ static int run_ref(const char *curve_name, BIGNUM *args[], const int num) {
     return -1;
   }
 
-  for (i = 0; i < num; ++i) {
-    scalars[i] = args[3 * i];
+  for (i = 0; i < ops; ++i) {
+    scalars[i] = bn[3 * i];
 
     points[i] = EC_POINT_new(group);
     if (points[i] == NULL) {
@@ -58,8 +57,8 @@ static int run_ref(const char *curve_name, BIGNUM *args[], const int num) {
       goto err;
     }
 
-    ret = EC_POINT_set_affine_coordinates_GFp(group, points[i], args[3 * i + 1],
-                                              args[3 * i + 2], NULL);
+    ret = EC_POINT_set_affine_coordinates_GFp(group, points[i], bn[3 * i + 1],
+                                              bn[3 * i + 2], NULL);
     if (ret != 1) {
       ERR_print_errors_fp(stderr);
       goto err;
@@ -78,31 +77,29 @@ static int run_ref(const char *curve_name, BIGNUM *args[], const int num) {
     goto err;
   }
 
-  ret = EC_POINTs_mul(group, point_res, NULL, num, (const EC_POINT**) points,
+  ret = EC_POINTs_mul(group, point_res, NULL, ops, (const EC_POINT**) points,
                       scalars, NULL);
   if (ret != 1) {
     ERR_print_errors_fp(stderr);
     goto err;
   }
 
-  res_x = BN_new();
-  res_y = BN_new();
-  if (res_x == NULL || res_y == NULL) {
+  bn_x = BN_new();
+  bn_y = BN_new();
+  if (bn_x == NULL || bn_y == NULL) {
     ERR_print_errors_fp(stderr);
     goto err;
   }
 
-  ret = EC_POINT_get_affine_coordinates_GFp(group, point_res, res_x, res_y,
+  ret = EC_POINT_get_affine_coordinates_GFp(group, point_res, bn_x, bn_y,
                                             NULL);
   if (ret != 1) {
     ERR_print_errors_fp(stderr);
     goto err;
   }
 
-  BN_print_fp(stdout, res_x);
-  putc('\n', stdout);
-  BN_print_fp(stdout, res_y);
-  putc('\n', stdout);
+  *resx = BN_bn2hex(bn_x);
+  *resy = BN_bn2hex(bn_y);
 
   ret = 0;
   goto end;
@@ -111,45 +108,108 @@ err:
   ret = -1;
 
 end:
-  for (i = 0; i < num; ++i)
+  for (i = 0; i < ops; ++i)
     if (points[i] != NULL)
-      EC_POINT_free(points[i]);
+      EC_POINT_clear_free(points[i]);
 
   EC_GROUP_free(group);
 
-  if (res_x != NULL)
-    BN_free(res_x);
+  if (bn_x != NULL)
+    BN_free(bn_x);
 
-  if (res_y != NULL)
-    BN_free(res_y);
+  if (bn_y != NULL)
+    BN_free(bn_y);
 
   return ret;
 }
 
-int main(int argc, char *argv[]) {
-  const int num = argc - 2;
-  BIGNUM *args[num];
+static PyObject* mul(PyObject* self, PyObject* args) {
+  BIGNUM *bn[6];
   int ret = -1;
+  int ops = 1;
   int i;
 
-  if (argc < 5 || num % 3)
-    return ret;
+  char *curve_name = NULL;
+
+  char *sa = NULL;
+  char *xa = NULL;
+  char *ya = NULL;
+
+  char *sb = NULL;
+  char *xb = NULL;
+  char *yb = NULL;
+
+  char *resx = NULL;
+  char *resy = NULL;
+
+  for (i = 0; i < 6; ++i)
+    bn[i] = NULL;
+
+  if(!PyArg_ParseTuple(args, "s(sss)|(sss)", &curve_name, &sa, &xa, &ya, &sb,
+                       &xb, &yb))
+    return NULL;
 
   ERR_load_crypto_strings();
 
-  for (i = 0; i < num; ++i) {
-    args[i] = BN_new();
-    if (BN_hex2bn(&(args[i]), argv[i + 2]) == 0)
-      return ret;
+  if (BN_hex2bn(&(bn[0]), sa) == 0)
+    goto end;
+  if (BN_hex2bn(&(bn[1]), xa) == 0)
+    goto end;
+  if (BN_hex2bn(&(bn[2]), ya) == 0)
+    goto end;
+
+  if (sb != NULL && xb != NULL && yb != NULL) {
+    ops = 2;
+
+    if (BN_hex2bn(&(bn[3]), sb) == 0)
+      goto end;
+    if (BN_hex2bn(&(bn[4]), xb) == 0)
+      goto end;
+    if (BN_hex2bn(&(bn[5]), yb) == 0)
+      goto end;
   }
 
-  ret = run_ref(argv[1], args, num / 3);
-
-  for (i = 0; i < num; ++i) {
-    BN_free(args[i]);
-  }
+  ret = run_ref(curve_name, bn, ops, &resx, &resy);
 
   ERR_free_strings();
 
-  return ret;
+end:
+  for (i = 0; i < 6; ++i)
+    BN_clear_free(bn[i]);
+
+  if (ret == 0)
+    return Py_BuildValue("(ss)", resx, resy);
+  Py_RETURN_NONE;
 }
+
+static PyMethodDef ecref_functions[] = {
+  {"mul", mul, METH_VARARGS, "Scalar multiplication"},
+  {0}
+};
+
+/* python 2 */
+#if PY_VERSION_HEX < 0x03000000
+
+void initecref(void) {
+  Py_InitModule3("ecref", ecref_functions, "module ecref");
+}
+
+#else  /* python 3 */
+
+static struct PyModuleDef ecrefmodule = {
+  {}, /* m_base */
+  "ecref",  /* m_name */
+  "module ecref",  /* m_doc */
+  0,  /* m_size */
+  ecref_functions,  /* m_methods */
+  0,  /* m_reload */
+  0,  /* m_traverse */
+  0,  /* m_clear */
+  0,  /* m_free */
+};
+
+PyObject* PyInit_ecref(void) {
+  return PyModule_Create(&ecrefmodule);
+}
+
+#endif  /* PY_VERSION_HEX */
