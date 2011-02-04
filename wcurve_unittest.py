@@ -3,14 +3,78 @@ Author: Sebastien Martini (seb@dbzteam.org)
 License: MIT
 """
 import unittest
+import binascii
 import copy
+import math
+import os
 import random
+import subprocess
+import sys
 # Local imports
 import wcurve
 
+if sys.version_info < (3, 0):
+    def _big_int_unpack_be(seq):
+        return sum([ord(b) << ((len(seq) - 1 - i) << 3) for i, b in enumerate(seq)])
+
+    def _big_int_pack_be(n):
+        nl = int(math.ceil(float(wcurve._bit_length(n)) / 8))
+        return ''.join([chr((n >> (i * 8)) & 0xff) for i in range(nl - 1,
+                                                                  -1, -1)])
+    def _be_unhex(s):
+        return _big_int_unpack_be(binascii.unhexlify('0' * (len(s) % 2) + s))
+
+else:
+    def _big_int_unpack_be(byte_seq):
+        r = 0
+        i = len(byte_seq) - 1
+        for c in byte_seq:
+            r += c << (i * 8)
+            i -= 1
+        return r
+
+    def _big_int_pack_be(n):
+        nl = math.ceil(n.bit_length() / 8)
+        return bytes((n >> (i * 8)) & 0xff for i in range(nl - 1, -1, -1))
+
+    def _be_unhex(s):
+        if isinstance(s, bytes):
+            s = s.decode('ascii')
+        s = '0' * (len(s) % 2) + s
+        return _big_int_unpack_be(bytes.fromhex(s))
+
+def _be_hex(n):
+    return binascii.hexlify(_big_int_pack_be(n))
+
+def _rand_point(curve):
+    while True:
+        x = random.SystemRandom().randint(1, curve.p - 1)
+        pt = wcurve.JacobianPoint.uncompress(x, 0, curve)
+        if pt.is_on_curve():
+            return pt
+
+def _compile_ref(bin_path):
+    if os.path.exists(bin_path) or not os.path.exists(bin_path + '.c'):
+        return False
+    os.system('gcc -W -Wall -o %s %s.c -lcrypto' % (bin_path, bin_path))
+    return True
+
+def _run_cmd(cmd):
+    r = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    stdout, _ = r.communicate()
+    if r.returncode != 0:
+        return None
+    return stdout
+
+
 class TestWCurveArithmetic(unittest.TestCase):
     def setUp(self):
+        self.cwd = os.path.dirname(os.path.abspath(__file__))
+        self.curve_name = 'prime256v1'
         self.curve = wcurve.secp256r1_curve()
+        self.curve_infective = wcurve.secp256r1_curve_infective()
+        self.bin = 'ec_ref'
+        self.bin_path = os.path.join(self.cwd, self.bin)
 
     def testEq(self):
         self.assertEqual(self.curve.base_point, self.curve.base_point)
@@ -59,7 +123,7 @@ class TestWCurveArithmetic(unittest.TestCase):
         r = s1 * self.curve.base_point + s2 * self.curve.base_point
         self.assertEqual(r, (s1 + s2) * self.curve.base_point)
 
-    def testMul(self):
+    def testScalarMul(self):
         r = self.curve.n * self.curve.base_point
         self.assertEqual(r, self.curve.point_at_infinity)
         r = 1 * self.curve.base_point
@@ -81,7 +145,7 @@ class TestWCurveArithmetic(unittest.TestCase):
         r2 = ((-42) % self.curve.n) * self.curve.base_point
         self.assertEqual(r1, r2)
 
-    def testMulRef(self):
+    def testScalarMulRef(self):
         # (x, y) = s * base_point obtained with openssl
         s = 55410786546881778422887285187544511127100960212956419513245461364050667784185
         x = 64169503900361343289983195807258161414745802527383776807124463141740561324790
@@ -97,15 +161,49 @@ class TestWCurveArithmetic(unittest.TestCase):
         p = wcurve.JacobianPoint.uncompress(self.curve.base_point.x, 1 - bit_y, self.curve)
         self.assertEqual(p, -self.curve.base_point)
 
-class TestScalarMulInfective(unittest.TestCase):
-    def setUp(self):
-        self.curve = wcurve.secp256r1_curve_infective()
+    def testScalarMulAgainstRef(self):
+        cmd = [self.bin_path, self.curve_name]
+        self.assertTrue(_compile_ref(self.bin_path))
+        try:
+            for i in range(10):
+                sa = random.SystemRandom().randint(1, self.curve.n - 1)
+                sb = random.SystemRandom().randint(1, self.curve.n - 1)
 
-    def testMul(self):
+                a = _rand_point(self.curve)
+                b = _rand_point(self.curve)
+                ax, ay = a.to_affine()
+                bx, by = b.to_affine()
+
+                stdout = _run_cmd(cmd + [_be_hex(sa), _be_hex(ax),
+                                         _be_hex(ay),
+                                         _be_hex(sb), _be_hex(bx),
+                                         _be_hex(by)])
+                self.assertTrue(stdout)
+                lines = stdout.splitlines()
+                self.assertEqual(len(lines), 2)
+
+                r = wcurve.JacobianPoint.from_affine(_be_unhex(lines[0]),
+                                                     _be_unhex(lines[1]),
+                                                     self.curve)
+                rr = sa * a + sb * b
+                self.assertEqual(r, rr)
+        finally:
+            os.unlink(self.bin_path)
+
+    def testScalarMulInfective(self):
         sk = random.SystemRandom().randint(1, self.curve.n - 1)
-        pk1 = self.curve.base_point.scalar_multiplication(sk)
-        pk2 = self.curve.base_point.scalar_multiplication_infective(sk)
+        pk1 = sk * self.curve.base_point
+        pk2 = sk * self.curve_infective.base_point
         self.assertEqual(pk1, pk2)
+
+    def testScalarMulInfectiveAgainstRef(self):
+        curve = self.curve
+        self.curve = self.curve_infective
+        try:
+            self.testScalarMulAgainstRef()
+        finally:
+            self.curve = curve
+
 
 if __name__ == '__main__':
     unittest.main()

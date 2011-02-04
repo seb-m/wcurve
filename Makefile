@@ -8,6 +8,7 @@ clean-doc:
 	rm -rf $(DSTDOC)
 
 clean: clean-doc
+	rm -rf dist
 	find . \( -name '*~' -or \
 		-name '*.pyc' -or \
 		-name '*.pyo' \) \
