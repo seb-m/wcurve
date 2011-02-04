@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import sys
-if sys.version < '2.4':
+if sys.version_info < (2, 4):
     sys.stderr.write('This module requires at least Python 2.4\n')
     sys.exit(1)
 
@@ -35,6 +35,5 @@ setup(
     license='MIT License',
     classifiers=classif,
     url='http://github.com/seb-m/wcurve',
-    #download_url='http://github.com/seb-m/wcurve/tarball/0.1.3',
     py_modules=['wcurve'],
     )
