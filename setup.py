@@ -27,7 +27,7 @@ classif = [
 
 setup(
     name='wcurve',
-    version='0.1.3',
+    version='0.1.4',
     description=('wcurve implements basic arithmetic operations on elliptic'
                  ' curves in short Weiertsrass form.'),
     author='Sebastien Martini',

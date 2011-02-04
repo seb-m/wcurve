@@ -67,7 +67,7 @@ import random
 
 __author__ = "Sebastien Martini (seb@dbzteam.org)"
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 
 def _check_integer_type(val):
     """
