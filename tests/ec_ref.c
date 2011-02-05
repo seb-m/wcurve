@@ -22,14 +22,27 @@
 */
 
 // Used as reference implementation when testing wcurve. This implementation
-// is based on OpenSSL. See wcurve_unittest.py.
+// is based on OpenSSL. See wcurve_unittest.py. It raises ecref.ECError on
+// errors.
+//
+// Example:
+//
+// import ecref
+// try:
+//    rx, ry = ecref.mul(self.curve_name,
+//                       (scalar_a, point_a_x, point_a_y),
+//                       (scalar_b, point_b_x, point_b_y))
+// except ecref.ECError as err:
+//    print(err)
+//
 
 #include <Python.h>
-#include <stdio.h>
 #include <openssl/bn.h>
 #include <openssl/ec.h>
 #include <openssl/err.h>
 #include <openssl/objects.h>
+
+static PyObject *ECError;
 
 static int run_ref(const char *curve_name, BIGNUM *bn[], const int ops,
                    char **resx, char **resy) {
@@ -42,9 +55,14 @@ static int run_ref(const char *curve_name, BIGNUM *bn[], const int ops,
   int ret = 0;
   int i = 0;
 
+  for (i = 0; i < ops; ++i) {
+    points[i] = NULL;
+    scalars[i] = NULL;
+  }
+
   group = EC_GROUP_new_by_curve_name(OBJ_txt2nid(curve_name));
   if (group == NULL) {
-    ERR_print_errors_fp(stderr);
+    PyErr_SetString(ECError, ERR_reason_error_string(ERR_get_error()));
     return -1;
   }
 
@@ -53,48 +71,48 @@ static int run_ref(const char *curve_name, BIGNUM *bn[], const int ops,
 
     points[i] = EC_POINT_new(group);
     if (points[i] == NULL) {
-      ERR_print_errors_fp(stderr);
+      PyErr_SetString(ECError, ERR_reason_error_string(ERR_get_error()));
       goto err;
     }
 
     ret = EC_POINT_set_affine_coordinates_GFp(group, points[i], bn[3 * i + 1],
                                               bn[3 * i + 2], NULL);
     if (ret != 1) {
-      ERR_print_errors_fp(stderr);
+      PyErr_SetString(ECError, ERR_reason_error_string(ERR_get_error()));
       goto err;
     }
 
     ret = EC_POINT_is_on_curve(group, points[i], NULL);
     if (ret != 1) {
-      fprintf(stderr, "Point is not on curve.\n");
+      PyErr_SetString(ECError, "Point is not on curve");
       goto err;
     }
   }
 
   point_res = EC_POINT_new(group);
   if (point_res == NULL) {
-    ERR_print_errors_fp(stderr);
+    PyErr_SetString(ECError, ERR_reason_error_string(ERR_get_error()));
     goto err;
   }
 
   ret = EC_POINTs_mul(group, point_res, NULL, ops, (const EC_POINT**) points,
                       scalars, NULL);
   if (ret != 1) {
-    ERR_print_errors_fp(stderr);
+    PyErr_SetString(ECError, ERR_reason_error_string(ERR_get_error()));
     goto err;
   }
 
   bn_x = BN_new();
   bn_y = BN_new();
   if (bn_x == NULL || bn_y == NULL) {
-    ERR_print_errors_fp(stderr);
+    PyErr_SetString(ECError, ERR_reason_error_string(ERR_get_error()));
     goto err;
   }
 
   ret = EC_POINT_get_affine_coordinates_GFp(group, point_res, bn_x, bn_y,
                                             NULL);
   if (ret != 1) {
-    ERR_print_errors_fp(stderr);
+    PyErr_SetString(ECError, ERR_reason_error_string(ERR_get_error()));
     goto err;
   }
 
@@ -179,7 +197,7 @@ end:
 
   if (ret == 0)
     return Py_BuildValue("(ss)", resx, resy);
-  Py_RETURN_NONE;
+  return NULL;
 }
 
 static PyMethodDef ecref_functions[] = {
@@ -191,7 +209,15 @@ static PyMethodDef ecref_functions[] = {
 #if PY_VERSION_HEX < 0x03000000
 
 void initecref(void) {
-  Py_InitModule3("ecref", ecref_functions, "module ecref");
+  PyObject *m;
+
+  m = Py_InitModule3("ecref", ecref_functions, "module ecref");
+  if (m == NULL)
+    return;
+
+  ECError = PyErr_NewException("ecref.ECError", NULL, NULL);
+  Py_INCREF(ECError);
+  PyModule_AddObject(m, "ECError", ECError);
 }
 
 #else  /* python 3 */
@@ -209,7 +235,17 @@ static struct PyModuleDef ecrefmodule = {
 };
 
 PyObject* PyInit_ecref(void) {
-  return PyModule_Create(&ecrefmodule);
+  PyObject *m;
+
+  m = PyModule_Create(&ecrefmodule);
+  if (m == NULL)
+    return NULL;
+
+  ECError = PyErr_NewException("ecref.ECError", NULL, NULL);
+  Py_INCREF(ECError);
+  PyModule_AddObject(m, "ECError", ECError);
+
+  return m;
 }
 
 #endif  /* PY_VERSION_HEX */
