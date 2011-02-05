@@ -4,4 +4,4 @@ include README.md
 include *.py
 recursive-include examples *.py *.sh
 recursive-include doc *
-recursive-include tests *.py *.c *.cfg
+recursive-include tests *.py *.c *.cfg *.sh
