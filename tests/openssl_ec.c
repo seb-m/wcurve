@@ -1,5 +1,5 @@
 /*
-  ec_ref.c - ec ref implementation
+  openssl_ec.c - EC reference implementation based on OpenSSL
   Copyright (c) 2011 Sebastien Martini <seb@dbzteam.org>
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,17 +22,17 @@
 */
 
 // Used as reference implementation when testing wcurve. This implementation
-// is based on OpenSSL. See wcurve_unittest.py. It raises ecref.ECError on
+// is based on OpenSSL. See wcurve_unittest.py. It raises openssl_ec.ECError on
 // errors.
 //
 // Example:
 //
-// import ecref
+// import openssl_ec
 // try:
-//    rx, ry = ecref.mul(self.curve_name,
-//                       (scalar_a, point_a_x, point_a_y),
-//                       (scalar_b, point_b_x, point_b_y))
-// except ecref.ECError as err:
+//    rx, ry = openssl_ec.mul(curve_name,
+//                            (scalar_a, point_a_x, point_a_y),
+//                            (scalar_b, point_b_x, point_b_y))
+// except openssl_ec.ECError as err:
 //    print(err)
 //
 
@@ -44,8 +44,8 @@
 
 static PyObject *ECError;
 
-static int run_ref(const char *curve_name, BIGNUM *bn[], const int ops,
-                   char **resx, char **resy) {
+static int scalar_mul(const char *curve_name, BIGNUM *bn[], const int ops,
+                      char **resx, char **resy) {
   EC_GROUP *group = NULL;
   EC_POINT *point_res = NULL;
   EC_POINT *points[ops];
@@ -187,7 +187,7 @@ static PyObject* mul(PyObject* self, PyObject* args) {
       goto end;
   }
 
-  ret = run_ref(curve_name, bn, ops, &resx, &resy);
+  ret = scalar_mul(curve_name, bn, ops, &resx, &resy);
 
   ERR_free_strings();
 
@@ -200,7 +200,7 @@ end:
   return NULL;
 }
 
-static PyMethodDef ecref_functions[] = {
+static PyMethodDef openssl_ec_methods[] = {
   {"mul", mul, METH_VARARGS, "Scalar multiplication"},
   {0}
 };
@@ -208,40 +208,40 @@ static PyMethodDef ecref_functions[] = {
 /* python 2 */
 #if PY_VERSION_HEX < 0x03000000
 
-void initecref(void) {
+void initopenssl_ec(void) {
   PyObject *m;
 
-  m = Py_InitModule3("ecref", ecref_functions, "module ecref");
+  m = Py_InitModule3("openssl_ec", openssl_ec_methods, "module openssl_ec");
   if (m == NULL)
     return;
 
-  ECError = PyErr_NewException("ecref.ECError", NULL, NULL);
+  ECError = PyErr_NewException("openssl_ec.ECError", NULL, NULL);
   Py_INCREF(ECError);
   PyModule_AddObject(m, "ECError", ECError);
 }
 
 #else  /* python 3 */
 
-static struct PyModuleDef ecrefmodule = {
+static struct PyModuleDef openssl_ecmodule = {
   {}, /* m_base */
-  "ecref",  /* m_name */
-  "module ecref",  /* m_doc */
+  "openssl_ec",  /* m_name */
+  "module openssl_ec",  /* m_doc */
   0,  /* m_size */
-  ecref_functions,  /* m_methods */
+  openssl_ec_methods,  /* m_methods */
   0,  /* m_reload */
   0,  /* m_traverse */
   0,  /* m_clear */
   0,  /* m_free */
 };
 
-PyObject* PyInit_ecref(void) {
+PyObject* PyInit_openssl_ec(void) {
   PyObject *m;
 
-  m = PyModule_Create(&ecrefmodule);
+  m = PyModule_Create(&openssl_ecmodule);
   if (m == NULL)
     return NULL;
 
-  ECError = PyErr_NewException("ecref.ECError", NULL, NULL);
+  ECError = PyErr_NewException("openssl_ec.ECError", NULL, NULL);
   Py_INCREF(ECError);
   PyModule_AddObject(m, "ECError", ECError);
 

@@ -19,9 +19,9 @@ except:  # lazy trick for py3k
     import wcurve
 
 try:
-    import ecref
+    import openssl_ec
 except:
-    ecref = None
+    openssl_ec = None
 
 
 if sys.version_info < (3, 0):
@@ -157,7 +157,7 @@ class TestWCurveArithmetic(unittest.TestCase):
         self.assertEqual(p, -self.curve.base_point)
 
     def testScalarMulAgainstRef(self):
-        self.assertFalse(ecref is None)
+        self.assertFalse(openssl_ec is None)
         for i in range(10):
             sa = random.SystemRandom().randint(1, self.curve.n - 1)
             sb = random.SystemRandom().randint(1, self.curve.n - 1)
@@ -167,9 +167,9 @@ class TestWCurveArithmetic(unittest.TestCase):
             ax, ay = a.to_affine()
             bx, by = b.to_affine()
 
-            res = ecref.mul(self.curve_name,
-                            (_be_hex(sa), _be_hex(ax), _be_hex(ay)),
-                            (_be_hex(sb), _be_hex(bx), _be_hex(by)))
+            res = openssl_ec.mul(self.curve_name,
+                                 (_be_hex(sa), _be_hex(ax), _be_hex(ay)),
+                                 (_be_hex(sb), _be_hex(bx), _be_hex(by)))
             self.assertFalse(res is None)
 
             r = wcurve.JacobianPoint.from_affine(_be_unhex(res[0]),

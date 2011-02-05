@@ -1,9 +1,14 @@
-PYTHON=python
+# 'make test' to run tests
+# 'make example' to run examples
+# 'make clean' to clean-up
 
 test:
 	cd tests; \
-	$(PYTHON) setup.py build; \
-	$(PYTHON) wcurve_unittest.py
+	./run.sh;
+
+example:
+	cd examples; \
+	./run.sh;
 
 clean:
 	rm -rf dist build tests/build MANIFEST

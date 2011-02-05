@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# This script instruments ecdsa.py
+# This script runs tests
 
 py_lst=(pypy \
         python2.4 \
@@ -20,9 +20,13 @@ while [ $i -lt $py_lst_len ]; do
 	continue
     fi
 
-    cmd="$bin ecdsa.py"
-    echo ">> $cmd"
-    $cmd
+    echo ">> Testing with $bin"
+    $bin setup.py --quiet build
+    $bin wcurve_unittest.py
+    # fixme: --quiet is not fully quiet
+    $bin setup.py --quiet clean --all 2>/dev/null 1>&2
+    # fixme: make it clean by setup.py
+    rm -f openssl_ec.so
     echo
 done
 
