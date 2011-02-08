@@ -11,7 +11,7 @@ example:
 	./run.sh;
 
 clean:
-	rm -rf dist build tests/build MANIFEST
+	rm -rf dist build tests/build MANIFEST docs/_build
 	find . \( -name '*~' -or \
 		-name '*.pyc' -or \
 		-name '*.pyo' -or \
