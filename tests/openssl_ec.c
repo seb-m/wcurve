@@ -22,7 +22,7 @@
 */
 
 // Used as reference implementation when testing wcurve. This implementation
-// is based on OpenSSL. See wcurve_unittest.py. It raises openssl_ec.ECError on
+// is based on OpenSSL. See wcurve_unittest.py. Raise openssl_ec.ECError on
 // errors.
 //
 // Example:
@@ -42,10 +42,11 @@
 #include <openssl/err.h>
 #include <openssl/objects.h>
 
+// Python exception
 static PyObject *ECError;
 
-static int scalar_mul(const char *curve_name, BIGNUM *bn[], const int ops,
-                      char **resx, char **resy) {
+static int _scalar_mul(const char *curve_name, BIGNUM *bn[], const int ops,
+                       char **resx, char **resy) {
   EC_GROUP *group = NULL;
   EC_POINT *point_res = NULL;
   EC_POINT *points[ops];
@@ -187,11 +188,11 @@ static PyObject* mul(PyObject* self, PyObject* args) {
       goto end;
   }
 
-  ret = scalar_mul(curve_name, bn, ops, &resx, &resy);
-
-  ERR_free_strings();
+  ret = _scalar_mul(curve_name, bn, ops, &resx, &resy);
 
 end:
+  ERR_free_strings();
+
   for (i = 0; i < 6; ++i)
     BN_clear_free(bn[i]);
 
