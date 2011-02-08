@@ -3,5 +3,5 @@ include MANIFEST.in
 include README.md
 include *.py
 recursive-include examples *.py *.sh
-recursive-include doc *
+recursive-include docs *
 recursive-include tests *.py *.c *.cfg *.sh
