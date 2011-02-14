@@ -108,13 +108,19 @@ def _cond_swap_values(swap, u, v):
     return u ^ swap_diff, v ^ swap_diff
 
 
-class _FpArithmetic:
-    def __init__(self, p):
+class _ZpZArithmetic:
+    def __init__(self, p, order):
         """
-        You shouldn't have to instantiate this class directly. If you do
-        it anyway, you must ensure that p is a prime.
+        order = euler_phi(p)
         """
         self.p = p
+        self.order = order
+
+    @staticmethod
+    def create_from_curve(curve):
+        if hasattr(curve, 'phi_p'):
+            return _ZpZArithmetic(curve.p, curve.phi_p)
+        return _FpArithmetic(curve.p)
 
     def exp(self, g, k, k_num_bits):
         """
@@ -139,33 +145,44 @@ class _FpArithmetic:
 
     def inverse(self, g):
         """
-        Returns inverse of g mod self.p.
+        Returns the inverse of g mod p. This method does not check the element
+        is invertible, this is the responsability of the caller.
         """
-        return self._inverse(g, self.p)
+        return self._inverse(g, self.order, self.p)
 
-    def _inverse(self, g, n):
+    def _inverse(self, g, order, p):
         """
-        Returns inverse of g mod n.
+        Returns inverse of g mod p.
         """
-        r = self._exp(g, n - 2, _bit_length(n - 2), n)
-        # Could not get a nul result if the element had been invertible.
+        e = order - 1
+        r = self._exp(g, e, _bit_length(e), p)
+        # Could not get a null result if the element had been invertible.
         if not r:  # equiv. to 'not r == 0'
-            raise ValueError("%d has no inverse mod %d." % (g, n))
+            raise ValueError("%d has no inverse mod %d." % (g, p))
         return r
 
-    def crt(self, lst, modulus):
+
+class _FpArithmetic(_ZpZArithmetic):
+    def __init__(self, p):
         """
-        Compute a list of crts sharing the same modulus.
+        p is prime
         """
-        prod = 1
-        for m in modulus:
-            prod *= m
-        ldiv = tuple(map(lambda m: prod // m, modulus))
-        linv = tuple(map(self._inverse, ldiv, modulus))
-        def _sum(a):
-            t = sum(map(lambda x, y, z: x * y * z, a, linv, ldiv))
-            return t % prod
-        return tuple(map(_sum, lst))
+        _ZpZArithmetic.__init__(self, p, p - 1)
+
+
+def _crt(lst, modulus):
+    """
+    Compute a list of crts sharing the same modulus.
+    """
+    prod = 1
+    for m in modulus:
+        prod *= m
+    ldiv = tuple(map(lambda m: prod // m, modulus))
+    linv = tuple(map(lambda x, y: _FpArithmetic(y).inverse(x), ldiv, modulus))
+    def _sum(a):
+        t = sum(map(lambda x, y, z: x * y * z, a, linv, ldiv))
+        return t % prod
+    return tuple(map(_sum, lst))
 
 
 class _CoZArithmetic:
@@ -311,7 +328,7 @@ class JacobianPoint:
         self.z = z
         self.curve = curve
         self.cozarithmetic = _CoZArithmetic(self.curve)
-        self.fparithmetic = _FpArithmetic(self.curve.p)
+        self.zarithmetic = _ZpZArithmetic.create_from_curve(self.curve)
 
     def _swap_coordinates(self, swap, point):
         """
@@ -359,8 +376,8 @@ class JacobianPoint:
             self.z = 0
         else:
             # k is public so there is no worry about using bit_length() here.
-            t1 = self.fparithmetic.exp(self.z, 3, _bit_length(3))
-            t1 = self.fparithmetic.inverse(t1)
+            t1 = self.zarithmetic.exp(self.z, 3, _bit_length(3))
+            t1 = self.zarithmetic.inverse(t1)
             self.y = t1 * self.y % self.curve.p
             t1 = t1 * self.z
             self.x = t1 * self.x % self.curve.p
@@ -429,7 +446,7 @@ class JacobianPoint:
         y2 = (t + curve.a * x + curve.b)  % curve.p
         # y = +/- y2 ** ((p + 1) / 4)
         e = (curve.p + 1) >> 2
-        y = _FpArithmetic(curve.p).exp(y2, e, _bit_length(e))
+        y = _ZpZArithmetic.create_from_curve(curve).exp(y2, e, _bit_length(e))
         if (y & 1) != bit_y:
             assert y != 0
             y = -y % curve.p
@@ -621,10 +638,10 @@ class JacobianPoint:
         # Base point on 'small curve'
         small_base_point = self.curve.small_curve.base_point
 
-        c = self.fparithmetic.crt([(self.x, small_base_point.x),
-                                   (self.y, small_base_point.y),
-                                   (self.z, small_base_point.z)],
-                                  (self.curve.p, self.curve.small_curve.p))
+        c = _crt([(self.x, small_base_point.x),
+                  (self.y, small_base_point.y),
+                  (self.z, small_base_point.z)],
+                 (self.curve.p, self.curve.small_curve.p))
 
         # Base point on 'big curve'
         big_base_point = JacobianPoint(c[0], c[1], c[2], self.curve.big_curve)
@@ -826,7 +843,10 @@ def _p256r1_p112r1_curve():
     """
     /!\ Do not use this curve.
     """
+    # secp112r1_curve.p * secp256r1_curve.p
     p = 515469932720476258852872762459232071402282041181133060692276609199472304430892366893122516146966316701371785077
+    # phi(p) = order(Z/pZ) = (secp112r1_curve.p - 1) * (secp256r1_curve.p - 1)
+    phi_p = 515469932720476258852872762459231955610192830824884297994829659791898774344744499917583226898562923236000382700
     a = 159842626263202500189511064820427587531906528835200512373105474359642778563901551336718126411233842142655446061818598002593123907123784073049135
     b = 484889491320735356329226626040208483611546569865294753617259762389829050609800549988015429153790970160257840085
     gx = 69387807193038620347826017107789675363942498000472348441314647750703812303234318768266908719566927173922489149
@@ -834,7 +854,12 @@ def _p256r1_p112r1_curve():
     # Not used
     n = 0
     h = 0
-    return _Curve(a, b, p, gx, gy, n, h)
+    curve = _Curve(a, b, p, gx, gy, n, h)
+    # Only curves with non finitie-field have their order attached to the
+    # curve's instance and will serve to instantiate the right object, see
+    # _ZpZArithmetic.create_from_curve().
+    curve.phi_p = phi_p
+    return curve
 
 def secp256r1_curve_infective():
     """

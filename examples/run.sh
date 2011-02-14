@@ -20,10 +20,13 @@ while [ $i -lt $py_lst_len ]; do
 	continue
     fi
 
-    cmd="$bin ecdsa.py"
-    echo ">> $cmd"
-    $cmd
-    echo
+    for example in *.py
+    do
+	cmd="$bin $example"
+	echo ">> $cmd"
+	$cmd
+	echo
+    done
 done
 
 exit 0

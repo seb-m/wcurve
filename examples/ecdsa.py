@@ -28,7 +28,7 @@ def _big_int_unpack_be(seq):
 def generate_keypair(curve):
     sk = random.SystemRandom().randint(1, curve.n - 1)
     pk = sk * curve.base_point
-    pk.canonicalize()
+    pk.canonicalize()  # needed for ephemeral key gen in sign()
     return sk, pk
 
 def sign(curve, secret_key, msg):
