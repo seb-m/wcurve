@@ -6,7 +6,7 @@ import time
 # Local import
 try:
     import wcurve
-except:  # lazy trick for py3k
+except ImportError:
     from os.path import abspath, dirname
     import sys
     parent = dirname(dirname(abspath(__file__)))
