@@ -12,7 +12,7 @@ import sys
 
 try:
     import wcurve
-except:  # lazy trick for py3k
+except ImportError:
     from os.path import abspath, dirname
     parent = dirname(dirname(abspath(__file__)))
     sys.path.append(parent)
@@ -20,7 +20,7 @@ except:  # lazy trick for py3k
 
 try:
     import openssl_ec
-except:
+except ImportError:
     openssl_ec = None
 
 

@@ -207,7 +207,7 @@ static PyMethodDef openssl_ec_methods[] = {
 };
 
 /* python 2 */
-#if PY_VERSION_HEX < 0x03000000
+#if PY_MAJOR_VERSION < 3
 
 void initopenssl_ec(void) {
   PyObject *m;
